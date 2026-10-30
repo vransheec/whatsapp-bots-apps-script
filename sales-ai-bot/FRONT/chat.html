@@ -1,0 +1,745 @@
+<!DOCTYPE html><html><head><base target="_top">
+<?!= include('styles') ?>
+<style>
+  .chat-shell{display:flex; height:calc(100vh - var(--nav-h)); border-top:1px solid var(--ink-200); background:#fff; overflow:hidden; position:relative;}
+  .chat-list-pane{width:380px; min-width:310px; flex:0 0 380px; display:flex; flex-direction:column; border-right:1px solid var(--ink-200); background:#fff;}
+  .chat-list-pane__head{padding:14px 16px 10px; border-bottom:1px solid var(--ink-100);}
+  .chat-list-pane__head h2{font-size:17px; font-weight:800;}
+  .chat-search{position:relative; margin-top:10px;}
+  .chat-search svg{position:absolute; left:11px; top:50%; transform:translateY(-50%); width:15px; height:15px; color:var(--ink-500);}
+  .chat-search input{width:100%; padding:9px 12px 9px 34px; border:1px solid var(--ink-200); border-radius:var(--r-ctrl); background:var(--ink-50); font-size:13.5px; outline:none;}
+  .chat-search input:focus{border-color:var(--steel); background:#fff;}
+  .chat-filters{display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:10px;}
+  .chat-filters select, .chat-filters input{font-size:12px; padding:6px 8px; border:1px solid var(--ink-200); border-radius:7px; background:var(--ink-50);}
+  .chat-order-toggle{display:flex; margin-top:8px;}
+  .chat-range{display:flex; gap:5px; flex-wrap:wrap; margin-top:10px;}
+  .crange-btn{flex:1; min-width:52px; border:1px solid var(--ink-200); background:#fff; color:var(--ink-700); font-size:11.5px; font-weight:700;
+    padding:6px 8px; border-radius:var(--r-pill); cursor:pointer; transition:background .14s var(--ease-in), color .14s var(--ease-in), border-color .14s var(--ease-in);}
+  .crange-btn:hover{background:var(--steel-50);}
+  .crange-btn.is-active{background:var(--steel); border-color:var(--steel); color:#fff;}
+  .chat-list{flex:1; overflow-y:auto;}
+  .chat-item{display:flex; gap:10px; padding:11px 16px; border-bottom:1px solid var(--ink-100); cursor:pointer; transition:background .14s var(--ease-in); position:relative;}
+  .chat-item:hover{background:var(--steel-50);}
+  .chat-item.is-active{background:var(--steel-50);}
+  .chat-item.is-active::after{content:""; position:absolute; right:0; top:0; bottom:0; width:3px; background:var(--steel);}
+  .chat-avatar{flex:0 0 40px; width:40px; height:40px; border-radius:50%; background:var(--steel); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:12px; position:relative;}
+  .chat-unread-dot{position:absolute; top:-2px; right:-2px; width:10px; height:10px; border-radius:50%; background:var(--st-red); border:2px solid #fff;}
+  .chat-item__body{flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;}
+  .chat-item__row1{display:flex; justify-content:space-between; gap:8px;}
+  .chat-item__phone{font-size:13.5px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .chat-item__time{font-size:10.5px; color:var(--ink-500); font-weight:600; flex:0 0 auto;}
+  .chat-item__preview{font-size:12.5px; color:var(--ink-500); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .chat-item__preview.is-empty{font-style:italic;}
+  .chat-item__meta{display:flex; align-items:center; gap:6px; margin-top:1px; flex-wrap:wrap;}
+  .chat-tag{font-size:10px; font-weight:700; padding:2px 7px; border-radius:999px;}
+  .chat-tag--mode.m-manual{background:#efe9d8; color:#8a6d1f;}
+  .chat-tag--mode.m-bot{background:#e3e7f6; color:var(--steel);}
+  .chat-tag--mode.m-bot-ia{background:#e2f6fb; color:#0f8aa8;}
+
+  .chat-conv-pane{flex:1; min-width:0; display:flex; flex-direction:column; background:var(--ink-50); position:relative;}
+  .chat-empty-state{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; color:var(--ink-500);}
+  .chat-conv{flex:1; display:none; flex-direction:column; min-height:0;}
+  .chat-conv.is-visible{display:flex;}
+  .chat-conv__header{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 20px; background:#fff; border-bottom:1px solid var(--ink-200); flex-wrap:wrap;}
+  .chat-back-btn{display:none; border:none; background:none; padding:6px; color:var(--ink-700); border-radius:var(--r-ctrl);}
+  .chat-back-btn:hover{background:var(--ink-100);}
+  .chat-conv__phone{font-size:15px; font-weight:800;}
+  .chat-conv__sub{display:flex; gap:6px; align-items:center; font-size:12px; color:var(--ink-500); margin-top:2px;}
+
+  .chat-messages{flex:1; overflow-y:auto; padding:20px 24px; display:flex; flex-direction:column; gap:4px;}
+  .chat-date-sep{align-self:center; font-size:11px; font-weight:700; color:var(--ink-500); background:var(--ink-100); padding:4px 12px; border-radius:999px; margin:12px 0 8px;}
+  .chat-system-note{align-self:center; font-size:12px; color:var(--ink-500); background:var(--ink-100); padding:5px 12px; border-radius:999px; margin:6px 0;}
+  .bubble-row{display:flex; margin:5px 0;}
+  .bubble-row.is-out{justify-content:flex-end;}
+  .bubble{max-width:66%; padding:9px 12px 7px; border-radius:12px; font-size:14px; line-height:1.5; box-shadow:var(--shadow-sm);}
+  .bubble--lead{background:#fff; border:1px solid var(--ink-200); border-bottom-left-radius:4px;}
+  .bubble--out{background:#e1f3e4; border:1px solid rgba(28,138,75,.18); border-bottom-right-radius:4px;}
+  .bubble__origin{display:flex; gap:4px; font-size:10.5px; font-weight:700; letter-spacing:.03em; text-transform:uppercase; margin-bottom:3px;}
+  .bubble__origin.o-bot{color:var(--steel);} .bubble__origin.o-ia{color:#0f8aa8;} .bubble__origin.o-asesor{color:var(--ink-700);}
+  .bubble__text{white-space:pre-wrap; word-break:break-word;}
+  .bubble__time{display:block; text-align:right; font-size:10.5px; color:var(--ink-500); margin-top:3px;}
+  .bubble-options{display:flex; gap:6px; flex-wrap:wrap; margin-top:6px;}
+  .bubble-option{background:#fff; border:1px solid var(--ink-200); color:var(--steel); font-size:12px; font-weight:700; padding:6px 12px; border-radius:999px;}
+  .media-box{display:flex; align-items:center; gap:10px; padding:8px 10px; border:1px dashed var(--ink-300); border-radius:8px; background:var(--ink-50); min-width:180px;}
+  .media-box svg{width:22px; height:22px; color:var(--ink-500); flex:0 0 auto;}
+  .media-thumb{max-width:220px; border-radius:10px; display:block; cursor:pointer;}
+  .media-label{font-size:12.5px; color:var(--ink-700); font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+
+  .newmsg-badge{position:absolute; left:50%; bottom:96px; transform:translateX(-50%) translateY(8px); opacity:0; pointer-events:none; background:var(--steel); color:#fff; font-size:12px; font-weight:700; padding:8px 16px; border-radius:999px; box-shadow:var(--shadow-brand); transition:opacity .22s var(--ease-in), transform .22s var(--ease-in);}
+  .newmsg-badge.is-visible{opacity:1; pointer-events:auto; transform:translateX(-50%) translateY(0);}
+
+  .composer{display:flex; gap:10px; align-items:flex-end; padding:12px 20px; background:#fff; border-top:1px solid var(--ink-200);}
+  .composer__attach{flex:0 0 auto; width:38px; height:38px; border-radius:50%; border:1px solid var(--ink-200); background:#fff; color:var(--ink-700); display:flex; align-items:center; justify-content:center;}
+  .composer__attach:hover{background:var(--ink-100);}
+  .composer textarea{flex:1; resize:none; border:1px solid var(--ink-200); border-radius:18px; padding:10px 16px; font-size:14px; max-height:120px; outline:none; background:var(--ink-50); font-family:inherit;}
+  .composer textarea:focus{border-color:var(--steel); background:#fff;}
+  .composer__send{flex:0 0 auto; width:40px; height:40px; border-radius:50%; border:none; background:var(--steel); color:#fff; display:flex; align-items:center; justify-content:center; box-shadow:var(--shadow-brand);}
+  .composer__send:hover{background:var(--steel-600);}
+  .composer__send:disabled{opacity:.5;}
+  .attach-preview{font-size:11px; color:var(--ink-500); padding:0 20px 8px;}
+
+  /* ---------- Panel de plantillas rápidas ---------- */
+  .quick-panel{position:absolute; left:16px; right:16px; bottom:70px; z-index:30; background:#fff;
+    border:1px solid var(--ink-200); border-radius:14px; box-shadow:var(--shadow-lg,0 10px 30px rgba(0,0,0,.15));
+    max-height:340px; display:flex; flex-direction:column; overflow:hidden;}
+  .quick-panel__head{display:flex; align-items:center; justify-content:space-between; padding:10px 14px;
+    border-bottom:1px solid var(--ink-100); font-size:13px; font-weight:800; color:var(--ink-800); background:var(--ink-50);}
+  .quick-panel__head button{border:none; background:none; cursor:pointer; font-size:14px; color:var(--ink-500);}
+  .quick-panel__body{overflow-y:auto; padding:8px;}
+  .quick-group-title{font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.04em;
+    color:var(--ink-500); padding:8px 8px 4px;}
+  .quick-item{display:block; width:100%; text-align:left; border:1px solid var(--ink-100); background:#fff;
+    border-radius:10px; padding:8px 10px; margin:4px 0; cursor:pointer; transition:background .12s, border-color .12s;}
+  .quick-item:hover{background:var(--steel-50); border-color:var(--steel);}
+  .quick-item__label{font-size:12px; font-weight:800; color:var(--ink-800); margin-bottom:2px;}
+  .quick-item__preview{font-size:11.5px; color:var(--ink-500); line-height:1.35; white-space:normal;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;}
+
+  @media (max-width:860px){
+    .chat-shell{height:calc(100vh - 56px);}
+    .chat-list-pane{width:100%; flex:1 1 auto; border-right:none;}
+    .chat-conv-pane{position:absolute; inset:0; background:#fff; display:none;}
+    .chat-shell.is-chat-open .chat-list-pane{display:none;}
+    .chat-shell.is-chat-open .chat-conv-pane{display:flex;}
+    .chat-back-btn{display:flex; align-items:center; justify-content:center;}
+    .bubble{max-width:82%;}
+  }
+</style>
+</head><body data-page="chat">
+<?!= include('nav') ?>
+<div class="chat-shell" id="chatShell">
+  <div class="chat-list-pane">
+    <div class="chat-list-pane__head">
+      <h2>Conversaciones</h2>
+      <div class="chat-search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <input type="text" id="search-leads" placeholder="Buscar por teléfono…" autocomplete="off">
+      </div>
+      <div class="chat-range" id="chatRangeBtns">
+        <button type="button" class="crange-btn" data-range="hoy">Hoy</button>
+        <button type="button" class="crange-btn is-active" data-range="3">3 días</button>
+        <button type="button" class="crange-btn" data-range="7">7 días</button>
+        <button type="button" class="crange-btn" data-range="30">30 días</button>
+        <button type="button" class="crange-btn" data-range="max">Máximo</button>
+      </div>
+      <div class="chat-filters">
+        <select id="filter-tech" onchange="onTechChange()"><option value="">Tecnología: Todas</option></select>
+        <select id="filter-provider"><option value="">Provider: Todos</option></select>
+        <select id="filter-estado"><option value="">Estado: Todos</option></select>
+        <input type="date" id="filter-desde">
+        <input type="date" id="filter-hasta">
+      </div>
+      <div class="chat-order-toggle">
+        <div class="segmented" id="orderSegmented" style="width:100%;">
+          <button type="button" data-orden="recientes" class="is-active" style="flex:1;">Última interacción</button>
+          <button type="button" data-orden="primera" style="flex:1;">Primer mensaje</button>
+        </div>
+      </div>
+    </div>
+    <div class="chat-list" id="leadsList"></div>
+  </div>
+
+  <div class="chat-conv-pane">
+    <div class="chat-empty-state" id="emptyState">
+      <svg viewBox="0 0 24 24" width="52" height="52" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+      <p>Selecciona una conversación para empezar</p>
+    </div>
+
+    <div class="chat-conv" id="convBox">
+      <div class="chat-conv__header">
+        <div style="display:flex; align-items:center; gap:10px; min-width:0;">
+          <button type="button" class="chat-back-btn" id="backBtn" aria-label="Volver">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+          </button>
+          <div>
+            <div class="chat-conv__phone" id="convPhone">—</div>
+            <div class="chat-conv__sub" id="convSub"></div>
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+          <div class="estado-picker" style="display:flex; align-items:center; gap:6px;">
+            <span style="font-size:11px; color:var(--ink-500); font-weight:700;">Estado</span>
+            <select id="estadoSelect" title="Mover el cliente a otro paso del flujo"
+              style="font-size:12px; font-weight:700; padding:6px 9px; border:1px solid var(--ink-200); border-radius:var(--r-pill); background:#fff; color:var(--ink-800); cursor:pointer; max-width:200px;">
+            </select>
+          </div>
+          <div class="segmented" id="modeSegmented">
+            <button type="button" data-mode="manual">Manual</button>
+            <button type="button" data-mode="bot">Bot</button>
+            <button type="button" data-mode="bot-ia">Bot+IA</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="chat-messages" id="messagesBox"></div>
+      <div class="newmsg-badge" id="newMsgBadge">↓ Nuevos mensajes</div>
+
+      <div class="attach-preview" id="attachPreview" style="display:none;"></div>
+      <!-- Panel de plantillas rápidas (mensajes del flujo + disparadores) -->
+      <div class="quick-panel" id="quickPanel" style="display:none;">
+        <div class="quick-panel__head">
+          <span>⚡ Mensajes predefinidos</span>
+          <button type="button" id="quickClose" aria-label="Cerrar">✕</button>
+        </div>
+        <div class="quick-panel__body" id="quickBody">
+          <p style="color:var(--ink-500); font-size:12px; padding:12px;">Cargando…</p>
+        </div>
+      </div>
+      <div class="composer">
+        <button type="button" class="composer__attach" id="attachBtn" aria-label="Adjuntar archivo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a5.5 5.5 0 0 1-7.78-7.78l9.19-9.19a3.5 3.5 0 0 1 4.95 4.95l-9.2 9.19a1.5 1.5 0 0 1-2.12-2.12l8.49-8.48"></path></svg>
+        </button>
+        <button type="button" class="composer__attach" id="quickBtn" aria-label="Mensajes predefinidos" title="Mensajes predefinidos del bot y disparadores">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h7l-1 8 10-12h-7l1-8z"></path></svg>
+        </button>
+        <input type="file" id="fileInput" accept="image/*,video/mp4,video/3gpp,application/pdf,.doc,.docx" style="display:none;">
+        <textarea id="msgInput" rows="1" placeholder="Escribe un mensaje… (Enter para enviar)"></textarea>
+        <button type="button" class="composer__send" id="sendBtn" aria-label="Enviar">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M2 21l21-9L2 3v7l15 2-15 2z"></path></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var state = { leads:[], leadsByPhone:{}, listRowEls:{}, techMap:{}, orden:'recientes', selectedPhone:null,
+    convMsgCount:0, userScrolledUp:false, opened:{}, translations:{} };
+
+  var leadsListEl = document.getElementById('leadsList');
+  var messagesBoxEl = document.getElementById('messagesBox');
+  var newMsgBadgeEl = document.getElementById('newMsgBadge');
+  var convBoxEl = document.getElementById('convBox');
+  var emptyStateEl = document.getElementById('emptyState');
+  var convPhoneEl = document.getElementById('convPhone');
+  var convSubEl = document.getElementById('convSub');
+  var modeSegmentedEl = document.getElementById('modeSegmented');
+  var estadoSelectEl = document.getElementById('estadoSelect');
+  var shellEl = document.getElementById('chatShell');
+  var estadosDisponibles = [];  // [{id,label}] estados del flujo activo (para el selector)
+
+  function readUrlTel(cb){
+    if (window.google && google.script && google.script.url && google.script.url.getLocation){
+      google.script.url.getLocation(function(loc){ cb((loc.parameter && loc.parameter.tel) || null); });
+    } else {
+      try { var m = window.location.search.match(/tel=([^&]+)/); cb(m ? decodeURIComponent(m[1]) : null); }
+      catch(e){ cb(null); }
+    }
+  }
+
+  /* ---------- filtros de lista ---------- */
+  function loadTechProviders(){
+    ABC.callServer('getTecnologiasYProviders', [], function(map){
+      state.techMap = map || {};
+      var sel = document.getElementById('filter-tech');
+      Object.keys(state.techMap).forEach(function(t){
+        var o=document.createElement('option'); o.value=t; o.textContent=t; sel.appendChild(o);
+      });
+      populateProviders('');
+    });
+  }
+  function populateProviders(tech){
+    var sel = document.getElementById('filter-provider'); var cur = sel.value;
+    sel.innerHTML = '<option value="">Provider: Todos</option>';
+    var list = tech ? (state.techMap[tech]||[]) : Array.prototype.concat.apply([], Object.keys(state.techMap).map(function(k){return state.techMap[k];}));
+    list.forEach(function(p){ var o=document.createElement('option'); o.value=p; o.textContent=p; sel.appendChild(o); });
+    if (list.indexOf(cur)!==-1) sel.value = cur;
+  }
+  window.onTechChange = function(){ populateProviders(document.getElementById('filter-tech').value); loadLeads(); };
+  document.getElementById('filter-provider').addEventListener('change', loadLeads);
+  document.getElementById('filter-desde').addEventListener('change', loadLeads);
+  document.getElementById('filter-hasta').addEventListener('change', loadLeads);
+
+  // ---------- Rango rápido de fechas ----------
+  function fmtISO(d){ return d.toISOString().slice(0,10); }
+  function applyChatRange(range){
+    var hasta = new Date(); var desde = new Date();
+    if (range === 'hoy'){ /* desde = hoy */ }
+    else if (range === '3'){ desde.setDate(desde.getDate()-3); }
+    else if (range === '7'){ desde.setDate(desde.getDate()-7); }
+    else if (range === '30'){ desde.setDate(desde.getDate()-30); }
+    else if (range === 'max'){ desde = new Date('2020-01-01'); }
+    document.getElementById('filter-desde').value = fmtISO(desde);
+    document.getElementById('filter-hasta').value = fmtISO(hasta);
+  }
+  applyChatRange('3'); // rango por defecto
+  document.getElementById('chatRangeBtns').addEventListener('click', function(e){
+    var btn = e.target.closest('.crange-btn'); if (!btn) return;
+    var range = btn.getAttribute('data-range');
+    Array.prototype.forEach.call(this.querySelectorAll('.crange-btn'), function(x){ x.classList.toggle('is-active', x===btn); });
+    applyChatRange(range);
+    loadLeads();
+  });
+
+  document.getElementById('orderSegmented').addEventListener('click', function(e){
+    var b = e.target.closest('button[data-orden]'); if (!b) return;
+    Array.prototype.forEach.call(this.querySelectorAll('button'), function(x){ x.classList.remove('is-active'); });
+    b.classList.add('is-active'); state.orden = b.getAttribute('data-orden'); loadLeads();
+  });
+  document.getElementById('search-leads').addEventListener('input', ABC.debounce(function(){ renderLeadsList(); }, 150));
+  document.getElementById('filter-estado').addEventListener('change', function(){ renderLeadsList(); });
+
+  /* ---------- render lista ---------- */
+  function getFilteredSortedLeads(){
+    var q = document.getElementById('search-leads').value.replace(/\D/g,'');
+    var fe = document.getElementById('filter-estado').value;  // filtro por estado (código)
+    var list = state.leads.filter(function(l){
+      if (q && l.TELF.indexOf(q)===-1) return false;
+      if (fe && (String(l.ESTADO_BOT||'').toUpperCase()) !== fe) return false;
+      return true;
+    });
+    // Helper: convierte fechas (timestamp en ms o string de fecha) a número comparable.
+    function toMs(v){ if(!v) return 0; var n=parseInt(v,10); if(!isNaN(n) && String(n)===String(v)) return n; var d=new Date(v); return isNaN(d.getTime())?0:d.getTime(); }
+    if (state.orden === 'primera'){
+      // Primer mensaje: por fecha de creación del lead, ascendente (el que escribió primero, arriba).
+      list.sort(function(a,b){ return toMs(a.CREATED_AT) - toMs(b.CREATED_AT); });
+    } else {
+      // Última interacción: por último mensaje (o última actualización), descendente.
+      list.sort(function(a,b){ return (toMs(b.ULTIMO_MSG_TS)||toMs(b.UPDATED_AT)) - (toMs(a.ULTIMO_MSG_TS)||toMs(a.UPDATED_AT)); });
+    }
+    return list;
+  }
+  function buildLeadRow(lead){
+    var row = document.createElement('div');
+    row.className = 'chat-item'; row.setAttribute('data-telf', lead.TELF); row.setAttribute('role','button'); row.tabIndex = 0;
+    row.addEventListener('click', function(){ selectLead(lead.TELF); });
+    row.addEventListener('keydown', function(e){ if (e.key==='Enter'||e.key===' '){ e.preventDefault(); selectLead(lead.TELF); } });
+    fillLeadRow(row, lead);
+    return row;
+  }
+  function fillLeadRow(row, lead){
+    var estado = ABC.estadoInfo(lead.ESTADO_BOT), mode = ABC.modeOf(lead);
+    var preview = lead.ULTIMO_MSG ? (ABC.originIcon(lead.ULTIMO_MSG_ORIGEN) + lead.ULTIMO_MSG) : 'Aún sin conversación';
+    var unread = lead.ULTIMO_MSG_ORIGEN === 'lead' && !state.opened[lead.TELF];
+    row.innerHTML =
+      '<div class="chat-avatar">' + ABC.escHtml(lead.TELF.slice(-2)) + (unread ? '<span class="chat-unread-dot"></span>' : '') + '</div>' +
+      '<div class="chat-item__body">' +
+        '<div class="chat-item__row1"><span class="chat-item__phone">+' + ABC.escHtml(lead.TELF) + '</span>' +
+        '<span class="chat-item__time">' + ABC.escHtml(ABC.fmtTime(lead.ULTIMO_MSG_TS)) + '</span></div>' +
+        '<div class="chat-item__preview' + (lead.ULTIMO_MSG?'':' is-empty') + '" title="' + ABC.escAttr(preview) + '">' + ABC.escHtml(preview) + '</div>' +
+        '<div class="chat-item__meta">' +
+          '<span class="chat-tag" style="background:' + estado.color + '1a; color:' + estado.color + '">' + ABC.escHtml(estado.label) + (lead.PROVIDER?' · '+ABC.escHtml(lead.PROVIDER):'') + '</span>' +
+          '<span class="chat-tag chat-tag--mode m-' + mode + '">' + ABC.modeLabel(mode) + '</span>' +
+        '</div>' +
+      '</div>';
+  }
+  function renderLeadsList(){
+    var list = getFilteredSortedLeads();
+    state.leadsByPhone = {}; list.forEach(function(l){ state.leadsByPhone[l.TELF]=l; });
+    if (!list.length){
+      leadsListEl.innerHTML = '<div style="padding:40px 20px; text-align:center; color:var(--ink-500); font-size:13px;">Sin conversaciones para estos filtros.</div>';
+      state.listRowEls = {}; return;
+    }
+    var seen = {}, prev = null;
+    list.forEach(function(lead){
+      seen[lead.TELF]=true; var row = state.listRowEls[lead.TELF];
+      if (!row){ row = buildLeadRow(lead); state.listRowEls[lead.TELF]=row; } else { fillLeadRow(row, lead); }
+      row.classList.toggle('is-active', lead.TELF===state.selectedPhone);
+      if (prev===null){ if (leadsListEl.firstChild!==row) leadsListEl.insertBefore(row, leadsListEl.firstChild); }
+      else if (prev.nextSibling!==row){ leadsListEl.insertBefore(row, prev.nextSibling); }
+      prev = row;
+    });
+    Object.keys(state.listRowEls).forEach(function(t){ if (!seen[t]){ state.listRowEls[t].remove(); delete state.listRowEls[t]; } });
+  }
+  function loadLeads(){
+    var filtros = { desde:document.getElementById('filter-desde').value, hasta:document.getElementById('filter-hasta').value,
+      provider:document.getElementById('filter-provider').value, orden:state.orden };
+    ABC.callServer('getLeads', [filtros], function(leads){ state.leads = leads||[]; populateEstadoFilter(); renderLeadsList();
+      if (!state.selectedPhone){
+        readUrlTel(function(urlTel){ if (urlTel && !state.selectedPhone && state.leadsByPhone[urlTel]) selectLead(urlTel); });
+      }
+    });
+  }
+  // Rellena el filtro de estado con los estados presentes en los leads cargados.
+  function populateEstadoFilter(){
+    var sel = document.getElementById('filter-estado');
+    var cur = sel.value;
+    var estados = {};
+    state.leads.forEach(function(l){ var e=(String(l.ESTADO_BOT||'').toUpperCase()); if (e) estados[e]=true; });
+    var ids = Object.keys(estados).sort();
+    sel.innerHTML = '<option value="">Estado: Todos</option>' + ids.map(function(id){
+      return '<option value="' + ABC.escAttr(id) + '">' + ABC.escHtml(ABC.estadoInfo(id).label) + '</option>';
+    }).join('');
+    if (ids.indexOf(cur) !== -1) sel.value = cur;  // conservar selección
+  }
+
+  /* ---------- conversación ---------- */
+  function selectLead(telf){
+    state.selectedPhone = telf; state.convMsgCount = 0; state.userScrolledUp = false; state.opened[telf] = true;
+    Object.keys(state.listRowEls).forEach(function(t){ state.listRowEls[t].classList.toggle('is-active', t===telf); });
+    emptyStateEl.style.display='none'; convBoxEl.classList.add('is-visible'); shellEl.classList.add('is-chat-open');
+    messagesBoxEl.innerHTML=''; newMsgBadgeEl.classList.remove('is-visible');
+    if (typeof closeQuickPanel === 'function') closeQuickPanel();  // cerrar plantillas al cambiar de chat
+    renderConvHeader(); loadConversation();
+  }
+  function renderConvHeader(){
+    var lead = state.leadsByPhone[state.selectedPhone];
+    convPhoneEl.textContent = '+' + state.selectedPhone;
+    if (lead){
+      var estado = ABC.estadoInfo(lead.ESTADO_BOT);
+      convSubEl.innerHTML = '<span style="width:7px;height:7px;border-radius:50%;background:'+estado.color+';display:inline-block;"></span> ' +
+        ABC.escHtml(estado.label) + (lead.PROVIDER?' · ':'') + (lead.PROVIDER ? ABC.providerBadge(lead.PROVIDER) : '') +
+        ' <span id="convPauta"></span>';
+      updateModeSegmented(ABC.modeOf(lead));
+      syncEstadoSelect(lead.ESTADO_BOT);
+      estadoSelectEl.style.display = '';
+      cargarBadgePauta(state.selectedPhone);
+    } else { convSubEl.textContent=''; estadoSelectEl.style.display='none'; }
+  }
+  // Pide la pauta del lead y la muestra como badge (📣 nombre con su color).
+  function cargarBadgePauta(telf){
+    ABC.callServer('getPautaDeLead', [telf], function(pauta){
+      // Puede haber cambiado de conversación mientras cargaba
+      if (telf !== state.selectedPhone) return;
+      var el = document.getElementById('convPauta');
+      if (!el || !pauta) return;
+      el.innerHTML = ' · <span style="display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:700;' +
+        'background:' + pauta.color + '22;color:' + pauta.color + ';border:1px solid ' + pauta.color + '55;' +
+        'border-radius:999px;padding:1px 8px;">📣 ' + ABC.escHtml(pauta.label) + '</span>';
+    });
+  }
+  // Rellena el <select> de estados y marca el estado actual del lead.
+  function syncEstadoSelect(estadoActual){
+    var actual = (estadoActual || 'INICIO').toString().toUpperCase();
+    var opts = estadosDisponibles.slice();
+    // Si el lead está en un estado que ya no existe en el flujo activo, mostrarlo igual
+    // (marcado como histórico) para no perder el contexto ni forzar un cambio.
+    if (actual && !opts.some(function(e){ return e.id===actual; })){
+      opts = [{ id:actual, label: ABC.estadoInfo(actual).label + ' (histórico)' }].concat(opts);
+    }
+    estadoSelectEl.innerHTML = opts.map(function(e){
+      return '<option value="' + ABC.escAttr(e.id) + '"' + (e.id===actual?' selected':'') + '>' + ABC.escHtml(e.label) + '</option>';
+    }).join('');
+  }
+  function updateModeSegmented(mode){
+    Array.prototype.forEach.call(modeSegmentedEl.querySelectorAll('button'), function(b){ b.classList.toggle('is-active', b.getAttribute('data-mode')===mode); });
+  }
+  modeSegmentedEl.addEventListener('click', function(e){
+    var btn = e.target.closest('button[data-mode]'); if (!btn||btn.disabled) return;
+    var telf = state.selectedPhone, lead = state.leadsByPhone[telf]; if (!telf||!lead) return;
+    var mode = btn.getAttribute('data-mode'); var ba = mode==='manual'?'0':'1'; var ia = mode==='bot-ia'?'1':'0';
+    Array.prototype.forEach.call(modeSegmentedEl.querySelectorAll('button'), function(b){ b.disabled=true; });
+    ABC.callServer('cambiarModoLead', [telf, ba, ia], function(res){
+      Array.prototype.forEach.call(modeSegmentedEl.querySelectorAll('button'), function(b){ b.disabled=false; });
+      if (res && res.success){ lead.BOT_ACTIVO=ba; lead.IA_ACTIVA=ia; updateModeSegmented(mode);
+        var row = state.listRowEls[telf]; if (row) fillLeadRow(row, lead); }
+    });
+  });
+
+  // Cambiar el estado del lead manualmente desde el chat.
+  estadoSelectEl.addEventListener('change', function(){
+    var telf = state.selectedPhone, lead = state.leadsByPhone[telf]; if (!telf||!lead) return;
+    var nuevo = estadoSelectEl.value;
+    var anterior = (lead.ESTADO_BOT || 'INICIO').toString().toUpperCase();
+    if (nuevo === anterior) return;
+    estadoSelectEl.disabled = true;
+    ABC.callServer('cambiarEstadoLead', [telf, nuevo], function(res){
+      estadoSelectEl.disabled = false;
+      if (res && res.success){
+        lead.ESTADO_BOT = res.estado;
+        renderConvHeader();
+        var row = state.listRowEls[telf]; if (row) fillLeadRow(row, lead);
+        ABC.toast('Estado actualizado a ' + (res.label || res.estado));
+      } else {
+        syncEstadoSelect(anterior); // revertir el select si falló
+        ABC.toast((res && res.error) ? res.error : 'No se pudo cambiar el estado');
+      }
+    });
+  });
+
+  // Cargar los estados disponibles (pasos activos del flujo) una sola vez.
+  ABC.callServer('getEstadosDisponibles', [], function(estados){
+    estadosDisponibles = estados || [];
+    if (state.selectedPhone && state.leadsByPhone[state.selectedPhone]){
+      syncEstadoSelect(state.leadsByPhone[state.selectedPhone].ESTADO_BOT);
+    }
+  });
+
+  function mediaSvg(){ return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><path d="M21 15l-5-5L5 21"></path></svg>'; }
+
+  function isMediaContent(tipo, contenido){
+    if (tipo==='image'||tipo==='video'||tipo==='document') return true;
+    var c = String(contenido||''); return c.indexOf('gcs://')===0 || c.indexOf('drive://')===0 || c.indexOf('local://')===0;
+  }
+  function buildMediaBlock(tipo, contenido, cb){
+    var parts = String(contenido||'').split('|');
+    var ref = parts[0]||'', fileName = parts[1] || (tipo==='image'?'Imagen':tipo==='video'?'Video':'Documento');
+    var wrap = document.createElement('div');
+    if (ref.indexOf('drive://')===0){
+      var id = ref.replace('drive://','');
+      var thumbUrl = 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(id) + '&sz=w300';
+      if (tipo==='image'||tipo===''){
+        wrap.innerHTML = '<img class="media-thumb" src="' + ABC.escAttr(thumbUrl) + '" alt="' + ABC.escAttr(fileName) + '">';
+        wrap.querySelector('img').addEventListener('click', function(){ window.open('https://drive.google.com/file/d/'+id+'/view','_blank'); });
+      } else {
+        wrap.innerHTML = '<div class="media-box">' + mediaSvg() + '<span class="media-label" title="' + ABC.escAttr(fileName) + '">' + ABC.escHtml(fileName) + '</span></div>';
+        wrap.querySelector('.media-box').style.cursor='pointer';
+        wrap.querySelector('.media-box').addEventListener('click', function(){ window.open('https://drive.google.com/file/d/'+id+'/view','_blank'); });
+      }
+      cb(wrap);
+    } else if (ref.indexOf('gcs://')===0){
+      wrap.innerHTML = '<div class="media-box">' + mediaSvg() + '<span class="media-label">Cargando adjunto…</span></div>';
+      cb(wrap);
+      ABC.callServer('getSignedUrl', [ref.replace('gcs://','')], function(url){
+        if (!url){ wrap.querySelector('.media-label').textContent = fileName; return; }
+        if (tipo==='image'){
+          wrap.innerHTML = '<img class="media-thumb" src="' + ABC.escAttr(url) + '" alt="' + ABC.escAttr(fileName) + '">';
+          wrap.querySelector('img').addEventListener('click', function(){ window.open(url,'_blank'); });
+        } else {
+          wrap.innerHTML = '<div class="media-box" style="cursor:pointer;">' + mediaSvg() + '<span class="media-label" title="' + ABC.escAttr(fileName) + '">' + ABC.escHtml(fileName) + '</span></div>';
+          wrap.querySelector('.media-box').addEventListener('click', function(){ window.open(url,'_blank'); });
+        }
+      }, function(){ wrap.querySelector('.media-label').textContent = fileName; });
+    } else {
+      var label = (tipo==='image'?'🖼 ':tipo==='video'?'🎬 ':'📄 ') + fileName;
+      wrap.innerHTML = '<div class="media-box">' + mediaSvg() + '<span class="media-label" title="' + ABC.escAttr(fileName) + '">' + ABC.escHtml(label) + '</span></div>';
+      cb(wrap);
+    }
+  }
+
+  function translateOption(raw){
+    raw = raw.trim();
+    return state.translations[raw] || raw;
+  }
+  function parseOptionsBlock(text){
+    // Formulario (Flow): [📅 Formulario de agendamiento: CTA] → chip con el CTA
+    var mf = text.match(/\[📅 Formulario de agendamiento:([^\]]+)\]/i);
+    if (mf){
+      var beforeF = text.slice(0, mf.index), afterF = text.slice(mf.index + mf[0].length);
+      return { before: beforeF.trim(), after: afterF.trim(), opts: ['📅 ' + mf[1].trim()], esFlow: true };
+    }
+    var m = text.match(/\[(Botones|Lista):([^\]]+)\]/i);
+    if (!m) return null;
+    var before = text.slice(0, m.index), after = text.slice(m.index + m[0].length);
+    var opts = m[2].split('|').map(function(s){ return s.trim(); }).filter(Boolean);
+    return { before: before.trim(), after: after.trim(), opts: opts };
+  }
+
+  function buildBubble(msg){
+    if (msg.origen === 'sistema'){
+      var note = document.createElement('div'); note.className = 'chat-system-note'; note.textContent = msg.contenido || '';
+      return { el: note, ready: Promise.resolve() };
+    }
+    var isOut = msg.origen==='bot'||msg.origen==='ia'||msg.origen==='asesor';
+    var row = document.createElement('div'); row.className = 'bubble-row' + (isOut?' is-out':'');
+    var bubble = document.createElement('div'); bubble.className = 'bubble ' + (isOut?'bubble--out':'bubble--lead');
+    var originHtml = '';
+    if (isOut){
+      var oc = msg.origen==='bot'?'o-bot':msg.origen==='ia'?'o-ia':'o-asesor';
+      var ol = msg.origen==='bot'?'🤖 Bot':msg.origen==='ia'?'🧠 IA':'👤 Asesor';
+      originHtml = '<div class="bubble__origin ' + oc + '">' + ol + '</div>';
+    }
+    bubble.innerHTML = originHtml;
+    row.appendChild(bubble);
+
+    var resolveReady;
+    var ready = new Promise(function(res){ resolveReady = res; });
+
+    if (isMediaContent(msg.tipo, msg.contenido)){
+      buildMediaBlock(msg.tipo, msg.contenido, function(mediaEl){
+        bubble.appendChild(mediaEl);
+        var t = document.createElement('span'); t.className='bubble__time'; t.textContent = bubbleTime(msg.timestamp);
+        bubble.appendChild(t); resolveReady();
+      });
+    } else {
+      var opts = parseOptionsBlock(msg.contenido || '');
+      if (opts){
+        if (opts.before){ var tb = document.createElement('div'); tb.className='bubble__text'; tb.innerHTML = ABC.formatWhatsAppText(ABC.escHtml(opts.before)); bubble.appendChild(tb); }
+        var chipsWrap = document.createElement('div'); chipsWrap.className = 'bubble-options';
+        chipsWrap.innerHTML = opts.opts.map(function(o){ return '<span class="bubble-option">' + ABC.escHtml(translateOption(o)) + '</span>'; }).join('');
+        bubble.appendChild(chipsWrap);
+        if (opts.after){ var ta = document.createElement('div'); ta.className='bubble__text'; ta.style.marginTop='4px'; ta.innerHTML = ABC.formatWhatsAppText(ABC.escHtml(opts.after)); bubble.appendChild(ta); }
+      } else {
+        var textEl = document.createElement('div'); textEl.className = 'bubble__text';
+        textEl.innerHTML = ABC.formatWhatsAppText(ABC.escHtml(msg.contenido || ''));
+        bubble.appendChild(textEl);
+      }
+      var t2 = document.createElement('span'); t2.className='bubble__time'; t2.textContent = bubbleTime(msg.timestamp);
+      bubble.appendChild(t2); resolveReady();
+    }
+    return { el: row, ready: ready };
+  }
+
+  function bubbleTime(ts){ var d = new Date(parseInt(ts,10)); if (isNaN(d.getTime())) return ''; return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
+  function isNearBottom(){ var el = messagesBoxEl; return (el.scrollHeight - el.scrollTop - el.clientHeight) < 80; }
+  function scrollToBottom(){ messagesBoxEl.scrollTop = messagesBoxEl.scrollHeight; newMsgBadgeEl.classList.remove('is-visible'); }
+
+  function appendMessages(mensajes, isInitial){
+    var lastDay = null; var existing = messagesBoxEl.querySelectorAll('.chat-date-sep');
+    if (existing.length) lastDay = existing[existing.length-1].textContent;
+    mensajes.forEach(function(msg){
+      var dl = ABC.fmtDayLabel(msg.timestamp);
+      if (dl !== lastDay){ var sep=document.createElement('div'); sep.className='chat-date-sep'; sep.textContent=dl; messagesBoxEl.appendChild(sep); lastDay=dl; }
+      var b = buildBubble(msg); messagesBoxEl.appendChild(b.el);
+      b.ready.then(function(){ if (isInitial || !state.userScrolledUp) scrollToBottom(); });
+    });
+    if (isInitial || !state.userScrolledUp) scrollToBottom(); else newMsgBadgeEl.classList.add('is-visible');
+  }
+  function loadConversation(){
+    var telf = state.selectedPhone; if (!telf) return; var isInitial = state.convMsgCount===0;
+    ABC.callServer('getConversacion', [telf], function(data){
+      if (telf !== state.selectedPhone) return;
+      var mensajes = (data && data.mensajes) || []; var nuevos = mensajes.slice(state.convMsgCount);
+      if (!nuevos.length && !isInitial) return;
+      state.convMsgCount = mensajes.length; appendMessages(nuevos, isInitial);
+    });
+  }
+  messagesBoxEl.addEventListener('scroll', function(){ state.userScrolledUp = !isNearBottom(); if (isNearBottom()) newMsgBadgeEl.classList.remove('is-visible'); });
+  newMsgBadgeEl.addEventListener('click', scrollToBottom);
+
+  /* ---------- composer ---------- */
+  var msgInputEl = document.getElementById('msgInput'), sendBtnEl = document.getElementById('sendBtn');
+  msgInputEl.addEventListener('input', function(){ msgInputEl.style.height='auto'; msgInputEl.style.height = Math.min(msgInputEl.scrollHeight,120)+'px'; });
+  msgInputEl.addEventListener('keydown', function(e){ if (e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendText(); } });
+  sendBtnEl.addEventListener('click', sendText);
+  function sendText(){
+    var texto = msgInputEl.value.trim(), telf = state.selectedPhone; if (!texto||!telf) return;
+    sendBtnEl.disabled = true;
+    ABC.callServer('enviarMensajeManual', [telf, texto], function(res){
+      sendBtnEl.disabled = false;
+      if (res && res.success){ msgInputEl.value=''; msgInputEl.style.height='auto'; loadConversation(); }
+      else if (res && res.error) ABC.toast(res.error,'error');
+    }, function(err){ sendBtnEl.disabled=false; ABC.toast((err&&err.message)||'Error al enviar','error'); });
+  }
+
+  /* ---------- plantillas rápidas (mensajes del flujo + disparadores) ---------- */
+  var quickPanelEl = document.getElementById('quickPanel');
+  var quickBodyEl = document.getElementById('quickBody');
+  var quickBtnEl = document.getElementById('quickBtn');
+  var quickCacheTelf = null;  // teléfono para el que ya cargamos las plantillas
+
+  function openQuickPanel(){
+    var telf = state.selectedPhone;
+    if (!telf){ ABC.toast('Selecciona una conversación primero'); return; }
+    quickPanelEl.style.display = 'flex';
+    // Recargar si cambió el lead (los textos resuelven provider/link del lead)
+    if (quickCacheTelf !== telf){
+      quickBodyEl.innerHTML = '<p style="color:var(--ink-500); font-size:12px; padding:12px;">Cargando…</p>';
+      ABC.callServer('getMensajesRapidos', [telf], function(data){
+        quickCacheTelf = telf;
+        renderQuickPanel(data || { estados:[], disparadores:[] });
+      }, function(){ quickBodyEl.innerHTML = '<p style="color:#c0392b; font-size:12px; padding:12px;">No se pudieron cargar las plantillas.</p>'; });
+    }
+  }
+  function closeQuickPanel(){ quickPanelEl.style.display = 'none'; }
+
+  var quickData = { estados:[], disparadores:[] };
+  var quickProviders = null;  // cache de providers para el sub-menú
+
+  function renderQuickPanel(data){
+    quickData = data || { estados:[], disparadores:[] };
+    var html = '';
+    var estados = quickData.estados || [];
+    var disp = quickData.disparadores || [];
+    if (!estados.length && !disp.length){
+      quickBodyEl.innerHTML = '<p style="color:var(--ink-500); font-size:12px; padding:12px;">No hay mensajes predefinidos configurados.</p>';
+      return;
+    }
+    // action: 'paso' (envía mensaje real con botones) | 'texto' (inserta texto en el input)
+    function item(label, preview, attrs){
+      return '<button type="button" class="quick-item"' + attrs + '>' +
+        '<div class="quick-item__label">' + ABC.escHtml(label) + '</div>' +
+        '<div class="quick-item__preview">' + ABC.escHtml(preview) + '</div>' +
+      '</button>';
+    }
+    if (estados.length){
+      html += '<div class="quick-group-title">📩 Mensajes del flujo (se envían con sus botones)</div>';
+      estados.forEach(function(e){
+        var badge = (e.tipo==='button'||e.tipo==='list') ? ' · con opciones' : '';
+        var reqBadge = e.requiere==='provider' ? ' · pide provider' : '';
+        html += item(e.label + badge + reqBadge, e.texto,
+          ' data-action="paso" data-estado="' + ABC.escAttr(e.estado) + '"' +
+          ' data-requiere="' + ABC.escAttr(e.requiere||'') + '"');
+      });
+    }
+    if (disp.length){
+      html += '<div class="quick-group-title">⚡ Disparadores (texto)</div>';
+      disp.forEach(function(d){
+        html += item(d.label, d.texto, ' data-action="texto" data-texto="' + ABC.escAttr(d.texto) + '"');
+      });
+    }
+    quickBodyEl.innerHTML = html;
+  }
+
+  // Muestra un sub-menú para elegir provider antes de enviar un paso que lo requiere.
+  function renderProviderPicker(estado){
+    function pintar(provs){
+      var html = '<div class="quick-group-title">Elige el provider para "' + ABC.escHtml(estado.replace(/_/g,' ')) + '"</div>';
+      html += '<button type="button" class="quick-item" data-back="1"><div class="quick-item__label">← Volver</div></button>';
+      provs.forEach(function(p){
+        html += '<button type="button" class="quick-item" data-action="paso-go" data-estado="' + ABC.escAttr(estado) + '" data-provider="' + ABC.escAttr(p.id) + '">' +
+          '<div class="quick-item__label">' + ABC.escHtml(p.label) + '</div></button>';
+      });
+      quickBodyEl.innerHTML = html;
+    }
+    if (quickProviders){ pintar(quickProviders); return; }
+    quickBodyEl.innerHTML = '<p style="color:var(--ink-500); font-size:12px; padding:12px;">Cargando providers…</p>';
+    ABC.callServer('getProvidersDisponibles', [], function(provs){ quickProviders = provs||[]; pintar(quickProviders); });
+  }
+
+  // Envía el paso real (mensaje con botones/lista) al cliente.
+  function enviarPaso(estado, provider){
+    var telf = state.selectedPhone; if (!telf) return;
+    closeQuickPanel();
+    ABC.toast('Enviando…');
+    ABC.callServer('enviarPasoManual', [telf, estado, { provider: provider||'' }], function(res){
+      if (res && res.success){ loadConversation(); ABC.toast('Mensaje enviado'); }
+      else ABC.toast((res && res.error) ? res.error : 'No se pudo enviar', 'error');
+    }, function(err){ ABC.toast((err&&err.message)||'Error al enviar','error'); });
+  }
+
+  quickBodyEl.addEventListener('click', function(e){
+    var btn = e.target.closest('.quick-item'); if (!btn) return;
+    if (btn.getAttribute('data-back')){ renderQuickPanel(quickData); return; }
+    var action = btn.getAttribute('data-action');
+    if (action === 'texto'){
+      // Disparador → insertar texto en el input para revisar/editar antes de enviar
+      var texto = btn.getAttribute('data-texto') || '';
+      var actual = msgInputEl.value;
+      msgInputEl.value = actual ? (actual.replace(/\s*$/, '') + '\n' + texto) : texto;
+      msgInputEl.style.height='auto'; msgInputEl.style.height = Math.min(msgInputEl.scrollHeight,120)+'px';
+      msgInputEl.focus(); closeQuickPanel();
+    } else if (action === 'paso'){
+      var estado = btn.getAttribute('data-estado');
+      var requiere = btn.getAttribute('data-requiere');
+      if (requiere === 'provider'){ renderProviderPicker(estado); }  // pedir provider primero
+      else { enviarPaso(estado, ''); }                                // enviar directo
+    } else if (action === 'paso-go'){
+      enviarPaso(btn.getAttribute('data-estado'), btn.getAttribute('data-provider'));
+    }
+  });
+
+  quickBtnEl.addEventListener('click', function(){
+    if (quickPanelEl.style.display === 'none') openQuickPanel(); else closeQuickPanel();
+  });
+  document.getElementById('quickClose').addEventListener('click', closeQuickPanel);
+
+  var attachBtnEl = document.getElementById('attachBtn'), fileInputEl = document.getElementById('fileInput'), attachPreviewEl = document.getElementById('attachPreview');
+  attachBtnEl.addEventListener('click', function(){ fileInputEl.click(); });
+  fileInputEl.addEventListener('change', function(){
+    var file = fileInputEl.files[0], telf = state.selectedPhone; if (!file||!telf) return;
+    if (file.size > 2*1024*1024){ ABC.toast('El archivo supera el límite de 2MB','error'); fileInputEl.value=''; return; }
+    attachPreviewEl.style.display='block'; attachPreviewEl.textContent = 'Enviando ' + file.name + '…';
+    var reader = new FileReader();
+    reader.onload = function(){
+      var base64 = String(reader.result).split(',')[1] || '';
+      ABC.callServer('enviarArchivoManual', [telf, base64, file.type, file.name], function(res){
+        attachPreviewEl.style.display='none'; fileInputEl.value='';
+        if (res && res.success) loadConversation(); else ABC.toast((res&&res.error)||'Error al enviar archivo','error');
+      }, function(err){ attachPreviewEl.textContent = 'Error al enviar ' + file.name; ABC.toast((err&&err.message)||'Error al enviar','error'); });
+    };
+    reader.readAsDataURL(file);
+  });
+
+  document.getElementById('backBtn').addEventListener('click', function(){ shellEl.classList.remove('is-chat-open'); });
+
+  /* ---------- arranque + polling ---------- */
+  ABC.callServer('getTraduccionesPayload', [], function(map){ state.translations = map || {}; });
+  loadTechProviders(); loadLeads();
+  setInterval(loadLeads, 10000);
+  setInterval(function(){ if (state.selectedPhone) loadConversation(); }, 5000);
+})();
+</script>
+</body></html>

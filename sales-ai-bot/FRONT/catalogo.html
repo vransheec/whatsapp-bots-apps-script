@@ -1,0 +1,617 @@
+<!DOCTYPE html><html><head><base target="_top">
+<?!= include('styles') ?>
+<style>
+  .cat-wrap{padding-top:28px; padding-bottom:56px;}
+  .cat-cols{display:grid; grid-template-columns:0.85fr 0.85fr 1fr 1.3fr; gap:14px; align-items:start;}
+  @media (max-width:1100px){ .cat-cols{grid-template-columns:1fr 1fr;} }
+  @media (max-width:640px){ .cat-cols{grid-template-columns:1fr;} }
+
+  .cat-col{background:#fff; border:1px solid var(--ink-200); border-radius:var(--r-card); box-shadow:var(--shadow-sm); display:flex; flex-direction:column; min-height:120px;}
+  .cat-col__head{display:flex; align-items:center; justify-content:space-between; gap:8px; padding:13px 15px; border-bottom:1px solid var(--ink-100);}
+  .cat-col__head h3{font-size:13.5px; font-weight:800;}
+  .cat-col__head .sub{font-size:11px; color:var(--ink-500); margin-top:2px;}
+  .cat-col__body{padding:8px; overflow-y:auto; max-height:64vh;}
+
+  .cat-item{display:flex; align-items:center; gap:8px; padding:9px 11px; border-radius:var(--r-ctrl); cursor:pointer; transition:background .14s var(--ease-in); border:1px solid transparent;}
+  .cat-item:hover{background:var(--steel-50);}
+  .cat-item.is-active{background:var(--steel-50); border-color:var(--steel);}
+  .cat-item__main{flex:1; min-width:0;}
+  .cat-item__title{font-size:13px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .cat-item__sub{font-size:11px; color:var(--ink-500); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:1px;}
+  .cat-item__chevron{color:var(--ink-300); flex:0 0 auto; font-size:15px;}
+  .cat-item.is-active .cat-item__chevron{color:var(--steel);}
+  .cat-count{font-size:10px; font-weight:700; padding:2px 7px; border-radius:999px; background:var(--ink-100); color:var(--ink-600); flex:0 0 auto;}
+
+  .icon-act{flex:0 0 auto; width:26px; height:26px; border-radius:6px; border:1px solid var(--ink-200); background:#fff; color:var(--ink-600); font-size:12px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; transition:background .14s;}
+  .icon-act:hover{background:var(--ink-100);}
+  .icon-act.danger:hover{background:#fdeaea; color:var(--st-red); border-color:#f3c0c0;}
+
+  .cat-empty{padding:26px 14px; text-align:center; color:var(--ink-400); font-size:12px;}
+  .cat-placeholder{padding:36px 14px; text-align:center; color:var(--ink-400); font-size:12.5px;}
+
+  .add-btn{border:1px dashed var(--ink-300); background:#fff; color:var(--steel); font-size:12px; font-weight:700; padding:5px 11px; border-radius:var(--r-ctrl); cursor:pointer; white-space:nowrap;}
+  .add-btn:hover{background:var(--steel-50);}
+
+  /* Modal genérico */
+  .modal-overlay{position:fixed; inset:0; background:rgba(20,18,28,.5); display:none; align-items:center; justify-content:center; z-index:300; padding:20px;}
+  .modal-overlay.is-open{display:flex;}
+  .modal{background:#fff; border-radius:var(--r-card); box-shadow:var(--shadow-lg); max-width:620px; width:100%; max-height:88vh; overflow:auto; padding:24px;}
+  .modal h3{font-size:17px; font-weight:800; margin-bottom:4px;}
+  .modal .modal-sub{font-size:12.5px; color:var(--ink-500); margin-bottom:16px;}
+  .form-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  .form-grid .full{grid-column:1 / -1;}
+  .fld label{font-size:11px; font-weight:700; color:var(--ink-600); text-transform:uppercase; letter-spacing:.03em; display:block; margin-bottom:4px;}
+  .fld input, .fld textarea{width:100%; padding:8px 11px; border:1px solid var(--ink-200); border-radius:7px; font-size:13px; font-family:inherit; background:var(--ink-50);}
+  .fld input:focus, .fld textarea:focus{border-color:var(--steel); background:#fff; outline:none;}
+  .fld input[readonly]{background:var(--ink-100); color:var(--ink-500);}
+  .fld textarea{min-height:64px; resize:vertical;}
+  @media (max-width:560px){ .form-grid{grid-template-columns:1fr;} }
+  .modal-actions{display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:22px;}
+
+  .toast-mini{position:fixed; bottom:20px; right:20px; background:var(--st-green); color:#fff; padding:11px 18px; border-radius:var(--r-ctrl); font-size:13px; font-weight:600; display:none; z-index:400; box-shadow:var(--shadow-lg);}
+  .toast-mini.error{background:var(--st-red);}
+</style>
+</head><body data-page="catalogo">
+<?!= include('nav') ?>
+<div class="page container cat-wrap">
+  <div class="page-header">
+    <div>
+      <h1>Catálogo</h1>
+      <p class="subtitle">Tecnologías, proveedores, cursos y modalidades que usa el bot</p>
+    </div>
+    <div class="actions">
+      <button class="btn btn-secondary btn-sm" id="reloadBtn">↻ Recargar</button>
+    </div>
+  </div>
+
+  <div class="cat-cols">
+    <div class="cat-col">
+      <div class="cat-col__head">
+        <div><h3>Tecnologías</h3><div class="sub">Áreas</div></div>
+        <button class="add-btn" id="addTechBtn">+ Agregar</button>
+      </div>
+      <div class="cat-col__body" id="techList"><div class="cat-empty">Cargando…</div></div>
+    </div>
+
+    <div class="cat-col">
+      <div class="cat-col__head">
+        <div><h3 id="provTitle">Proveedores</h3><div class="sub" id="provSub">Elige tecnología</div></div>
+        <button class="add-btn" id="addProvBtn" style="display:none;">+ Agregar</button>
+      </div>
+      <div class="cat-col__body" id="provList"><div class="cat-placeholder">←</div></div>
+    </div>
+
+    <div class="cat-col">
+      <div class="cat-col__head">
+        <div><h3 id="cursTitle">Cursos</h3><div class="sub" id="cursSub">Elige proveedor</div></div>
+        <button class="add-btn" id="addCursBtn" style="display:none;">+ Agregar</button>
+      </div>
+      <div class="cat-col__body" id="cursList"><div class="cat-placeholder">Elige un proveedor</div></div>
+    </div>
+
+    <div class="cat-col">
+      <div class="cat-col__head">
+        <div><h3 id="modTitle">Modalidades</h3><div class="sub" id="modSub">Elige un curso</div></div>
+        <button class="add-btn" id="addModBtn" style="display:none;">+ Agregar</button>
+      </div>
+      <div class="cat-col__body" id="modList"><div class="cat-placeholder">Elige un curso</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal genérico (para tech, provider, curso, modalidad) -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <h3 id="modalTitle">Editar</h3>
+    <p class="modal-sub" id="modalSub"></p>
+    <div id="modalBody"></div>
+    <div class="modal-actions">
+      <button class="btn btn-danger btn-sm" id="modalDeleteBtn" style="display:none;">Eliminar</button>
+      <div style="display:flex; gap:10px; margin-left:auto;">
+        <button class="btn btn-secondary btn-sm" id="modalCancelBtn">Cancelar</button>
+        <button class="btn btn-primary btn-sm" id="modalSaveBtn">Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast-mini" id="toastMini"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  var DB = {
+    asesores: { headers: [], rows: [] },
+    cursos:   { headers: [], rows: [] },
+    modalidades: { headers: [], rows: [] }
+  };
+  var sel = { tech: null, provider: null, cert: null };
+  var loaded = 0;
+  // Estado del modal: qué se está editando
+  var editing = null; // { kind:'tech'|'provider'|'curso'|'modalidad', ... }
+
+  function colIdx(seccion, name){ return DB[seccion].headers.map(function(h){ return h.toUpperCase().trim(); }).indexOf(name.toUpperCase()); }
+  function cell(seccion, row, name){ var i = colIdx(seccion, name); return i>=0 ? (row[i]||'') : ''; }
+  function setCell(seccion, row, name, val){ var i = colIdx(seccion, name); if (i>=0) row[i] = val; }
+  function newRow(seccion){ return DB[seccion].headers.map(function(){ return ''; }); }
+
+  function toast(msg, err){
+    var t = document.getElementById('toastMini');
+    t.textContent = msg; t.className = 'toast-mini' + (err?' error':'');
+    t.style.display = 'block'; setTimeout(function(){ t.style.display='none'; }, 2600);
+  }
+
+  function loadAll(){
+    loaded = 0;
+    ['asesores','cursos','modalidades'].forEach(function(sec){
+      ABC.callServer('getCatalogoData', [sec], function(res){
+        DB[sec] = { headers: (res && res.headers) || [], rows: (res && res.rows) || [] };
+        loaded++; if (loaded === 3){ renderTechs(); }
+      }, function(){ loaded++; if (loaded===3) renderTechs(); });
+    });
+  }
+
+  // ================= consultas =================
+  // NOTA: "tech" en todo este archivo es el TECNOLOGIA_ID (ej. "CLOUD", "IA").
+  function getTechs(){
+    var seen = {}, list = [];
+    DB.asesores.rows.forEach(function(r){
+      var t = cell('asesores', r, 'TECNOLOGIA_ID').trim();
+      if (t && !seen[t.toUpperCase()]){ seen[t.toUpperCase()] = true; list.push(t); }
+    });
+    return list;
+  }
+  function getProviders(tech){
+    var seen = {}, list = [];
+    DB.asesores.rows.forEach(function(r){
+      if (cell('asesores', r, 'TECNOLOGIA_ID').trim().toUpperCase() !== tech.toUpperCase()) return;
+      var p = cell('asesores', r, 'PROVIDER').trim();
+      if (p && !seen[p.toUpperCase()]){ seen[p.toUpperCase()] = true; list.push(p); }
+    });
+    return list;
+  }
+  function techTieneProviders(tech){
+    var provs = getProviders(tech);
+    if (provs.length > 1) return true;
+    // Sin proveedores si el único provider coincide con el ID de la tecnología (comparación normalizada).
+    var norm = function(s){ return (s||'').toUpperCase().replace(/[^\w]/g,'').trim(); };
+    if (provs.length === 1 && norm(provs[0]) !== norm(tech)) return true;
+    return false;
+  }
+  function cursosDeProvider(provider){ return DB.cursos.rows.filter(function(r){ return cell('cursos', r, 'PROVIDER').trim().toUpperCase() === provider.trim().toUpperCase(); }); }
+  function modalidadesDeCert(certId){ return DB.modalidades.rows.filter(function(r){ return cell('modalidades', r, 'CERT_ID').trim().toUpperCase() === certId.trim().toUpperCase(); }); }
+  function providerRow(tech, provider){
+    return DB.asesores.rows.filter(function(r){
+      return cell('asesores', r, 'TECNOLOGIA_ID').trim().toUpperCase() === tech.toUpperCase()
+          && cell('asesores', r, 'PROVIDER').trim().toUpperCase() === provider.toUpperCase();
+    })[0];
+  }
+  // Fila (cualquiera) de una tecnología (por TECNOLOGIA_ID).
+  function techRow(tech){
+    return DB.asesores.rows.filter(function(r){ return cell('asesores', r, 'TECNOLOGIA_ID').trim().toUpperCase() === tech.trim().toUpperCase(); })[0];
+  }
+  function techNombreBoton(tech){
+    var r = techRow(tech);
+    return (r && cell('asesores', r, 'TECNOLOGIA_NOMBRE_BOTON')) || tech;
+  }
+  function techId(tech){ return tech; } // tech YA es el TECNOLOGIA_ID
+  function cursoRowByCert(certId){ return DB.cursos.rows.filter(function(r){ return cell('cursos', r, 'CERT_ID').trim() === certId.trim(); })[0]; }
+
+  // ================= Nivel 1: Tecnologías =================
+  function renderTechs(){
+    var el = document.getElementById('techList');
+    var techs = getTechs();
+    if (!techs.length){ el.innerHTML = '<div class="cat-empty">No hay tecnologías.</div>'; return; }
+    el.innerHTML = techs.map(function(t){
+      var conProv = techTieneProviders(t);
+      var nProv = getProviders(t).length;
+      var subtxt = (conProv ? (nProv + ' proveedor' + (nProv!==1?'es':'')) : 'sin proveedores') + ' · ' + techId(t);
+      return '<div class="cat-item' + (sel.tech===t?' is-active':'') + '" data-tech="' + ABC.escAttr(t) + '">' +
+        '<div class="cat-item__main"><div class="cat-item__title">' + ABC.escHtml(techNombreBoton(t)) + '</div>' +
+        '<div class="cat-item__sub">' + ABC.escHtml(subtxt) + '</div></div>' +
+        '<button class="icon-act" data-edittech="' + ABC.escAttr(t) + '" title="Editar">✎</button>' +
+        '<button class="icon-act danger" data-deltech="' + ABC.escAttr(t) + '" title="Eliminar">🗑</button>' +
+        '<span class="cat-item__chevron">›</span></div>';
+    }).join('');
+    wireList(el, 'data-tech', function(v){ selectTech(v); }, ['data-edittech','data-deltech']);
+    wireBtns(el, 'data-edittech', function(v){ editTech(v); });
+    wireBtns(el, 'data-deltech', function(v){ eliminarTech(v); });
+  }
+
+  function selectTech(tech){
+    sel.tech = tech; sel.provider = null; sel.cert = null;
+    renderTechs(); clearFrom('curs');
+    if (techTieneProviders(tech)){
+      document.getElementById('provSub').textContent = 'de ' + techNombreBoton(tech);
+      document.getElementById('addProvBtn').style.display = '';
+      renderProviders(tech);
+    } else {
+      document.getElementById('provList').innerHTML = '<div class="cat-empty">Sin proveedores.<br>Cursos a la derecha →</div>';
+      document.getElementById('provSub').textContent = techNombreBoton(tech) + ' (sin proveedores)';
+      document.getElementById('addProvBtn').style.display = 'none';
+      // Sin proveedores: los cursos se buscan por el PROVIDER real de la fila de la tecnología.
+      var provs = getProviders(tech);
+      selectProvider(provs[0] || tech, true);
+    }
+  }
+
+  // ================= Nivel 2: Proveedores =================
+  function renderProviders(tech){
+    var el = document.getElementById('provList');
+    var provs = getProviders(tech);
+    if (!provs.length){ el.innerHTML = '<div class="cat-empty">Sin proveedores.</div>'; return; }
+    el.innerHTML = provs.map(function(p){
+      var r = providerRow(tech, p) || newRow('asesores');
+      var nCursos = cursosDeProvider(p).length;
+      return '<div class="cat-item' + (sel.provider===p?' is-active':'') + '" data-prov="' + ABC.escAttr(p) + '">' +
+        '<div class="cat-item__main"><div class="cat-item__title">' + ABC.escHtml(cell('asesores', r, 'NOMBRE_BOTON') || p) + '</div>' +
+        '<div class="cat-item__sub">' + ABC.escHtml(cell('asesores', r, 'ASESOR') || 'sin asesor') + ' · ' + nCursos + ' curso' + (nCursos!==1?'s':'') + '</div></div>' +
+        '<button class="icon-act" data-editprov="' + ABC.escAttr(p) + '" title="Editar">✎</button>' +
+        '<button class="icon-act danger" data-delprov="' + ABC.escAttr(p) + '" title="Eliminar">🗑</button>' +
+        '<span class="cat-item__chevron">›</span></div>';
+    }).join('');
+    wireList(el, 'data-prov', function(v){ selectProvider(v); }, ['data-editprov','data-delprov']);
+    wireBtns(el, 'data-editprov', function(v){ editProvider(v); });
+    wireBtns(el, 'data-delprov', function(v){ eliminarProvider(v); });
+  }
+
+  function selectProvider(provider, skipRender){
+    sel.provider = provider; sel.cert = null;
+    if (!skipRender) renderProviders(sel.tech);
+    clearFrom('mod');
+    document.getElementById('cursTitle').textContent = 'Cursos';
+    document.getElementById('cursSub').textContent = provider;
+    document.getElementById('addCursBtn').style.display = '';
+    renderCursos(provider);
+  }
+
+  // ================= Nivel 3: Cursos =================
+  function renderCursos(provider){
+    var el = document.getElementById('cursList');
+    var cursos = cursosDeProvider(provider);
+    if (!cursos.length){ el.innerHTML = '<div class="cat-empty">Sin cursos.</div>'; return; }
+    el.innerHTML = cursos.map(function(r){
+      var certId = cell('cursos', r, 'CERT_ID');
+      var nombre = cell('cursos', r, 'NOMBRE_CERT') || certId;
+      var nMod = modalidadesDeCert(certId).length;
+      return '<div class="cat-item' + (sel.cert===certId?' is-active':'') + '" data-cert="' + ABC.escAttr(certId) + '">' +
+        '<div class="cat-item__main"><div class="cat-item__title">' + ABC.escHtml(nombre) + '</div>' +
+        '<div class="cat-item__sub">' + ABC.escHtml(certId) + ' · ' + nMod + ' modalidad' + (nMod!==1?'es':'') + '</div></div>' +
+        '<button class="icon-act" data-editcurso="' + ABC.escAttr(certId) + '" title="Editar">✎</button>' +
+        '<button class="icon-act danger" data-delcurso="' + ABC.escAttr(certId) + '" title="Eliminar">🗑</button>' +
+        '<span class="cat-item__chevron">›</span></div>';
+    }).join('');
+    wireList(el, 'data-cert', function(v){ selectCurso(v); }, ['data-editcurso','data-delcurso']);
+    wireBtns(el, 'data-editcurso', function(v){ editCurso(v); });
+    wireBtns(el, 'data-delcurso', function(v){ eliminarCurso(v); });
+  }
+
+  function selectCurso(certId){
+    sel.cert = certId;
+    renderCursos(sel.provider);
+    document.getElementById('modSub').textContent = certId;
+    document.getElementById('addModBtn').style.display = '';
+    renderModalidades(certId);
+  }
+
+  // ================= Nivel 4: Modalidades =================
+  function renderModalidades(certId){
+    var el = document.getElementById('modList');
+    var mods = modalidadesDeCert(certId);
+    if (!mods.length){ el.innerHTML = '<div class="cat-empty">Sin modalidades. Agrega una.</div>'; return; }
+    el.innerHTML = mods.map(function(r, i){
+      var nombre = cell('modalidades', r, 'NOMBRE_MODALIDAD') || cell('modalidades', r, 'MODALIDAD_ID');
+      var precio = cell('modalidades', r, 'PRECIO');
+      return '<div class="cat-item" data-mod="' + i + '">' +
+        '<div class="cat-item__main"><div class="cat-item__title">' + ABC.escHtml(nombre) + '</div>' +
+        '<div class="cat-item__sub" style="color:var(--st-green); font-weight:700;">' + ABC.escHtml(precio) + '</div></div>' +
+        '<button class="icon-act" data-editmod="' + i + '" title="Editar">✎</button>' +
+        '<button class="icon-act danger" data-delmod="' + i + '" title="Eliminar">🗑</button></div>';
+    }).join('');
+    wireBtns(el, 'data-editmod', function(v){ editModalidad(parseInt(v,10)); });
+    wireBtns(el, 'data-delmod', function(v){ eliminarModalidad(parseInt(v,10)); });
+    // clic en la tarjeta también abre editar
+    Array.prototype.forEach.call(el.querySelectorAll('[data-mod]'), function(it){
+      it.addEventListener('click', function(e){
+        if (e.target.getAttribute('data-editmod') || e.target.getAttribute('data-delmod')) return;
+        editModalidad(parseInt(it.getAttribute('data-mod'),10));
+      });
+    });
+  }
+
+  // ================= helpers de wiring =================
+  function wireList(el, attr, onClick, ignoreAttrs){
+    Array.prototype.forEach.call(el.querySelectorAll('['+attr+']'), function(it){
+      it.addEventListener('click', function(e){
+        for (var k=0;k<(ignoreAttrs||[]).length;k++){ if (e.target.getAttribute(ignoreAttrs[k])) return; }
+        onClick(it.getAttribute(attr));
+      });
+    });
+  }
+  function wireBtns(el, attr, onClick){
+    Array.prototype.forEach.call(el.querySelectorAll('['+attr+']'), function(b){
+      b.addEventListener('click', function(e){ e.stopPropagation(); onClick(b.getAttribute(attr)); });
+    });
+  }
+  function clearFrom(level){
+    if (level==='prov' || level==='curs' || level==='mod'){
+      document.getElementById('modList').innerHTML = '<div class="cat-placeholder">Elige un curso</div>';
+      document.getElementById('addModBtn').style.display='none';
+      document.getElementById('modSub').textContent='Elige un curso'; sel.cert=null;
+    }
+    if (level==='prov' || level==='curs'){
+      document.getElementById('cursList').innerHTML = '<div class="cat-placeholder">Elige un proveedor</div>';
+      document.getElementById('addCursBtn').style.display='none';
+      document.getElementById('cursSub').textContent='Elige proveedor';
+    }
+  }
+
+  // ================= MODAL genérico =================
+  function openModal(title, sub, bodyHtml, showDelete){
+    document.getElementById('modalTitle').textContent = title;
+    document.getElementById('modalSub').textContent = sub || '';
+    document.getElementById('modalBody').innerHTML = bodyHtml;
+    document.getElementById('modalDeleteBtn').style.display = showDelete ? '' : 'none';
+    document.getElementById('editModal').classList.add('is-open');
+  }
+  function closeModal(){ document.getElementById('editModal').classList.remove('is-open'); editing = null; }
+  function inputRow(label, key, val, opts){
+    opts = opts || {};
+    var full = opts.full ? ' full' : '';
+    var ro = opts.readonly ? ' readonly' : '';
+    var control = opts.textarea
+      ? '<textarea data-k="' + ABC.escAttr(key) + '">' + ABC.escHtml(val||'') + '</textarea>'
+      : '<input data-k="' + ABC.escAttr(key) + '"' + ro + ' value="' + ABC.escAttr(val||'') + '">';
+    return '<div class="fld' + full + '"><label>' + ABC.escHtml(label) + '</label>' + control + '</div>';
+  }
+  function readModal(){
+    var out = {};
+    Array.prototype.forEach.call(document.getElementById('modalBody').querySelectorAll('[data-k]'), function(inp){
+      out[inp.getAttribute('data-k')] = inp.value;
+    });
+    return out;
+  }
+
+  // ----- Editar / Agregar TECNOLOGÍA -----
+  function editTech(tech){
+    editing = { kind:'tech', original: tech, isNew:false };
+    openModal('Editar tecnología', 'ID interno fijo · nombre visible editable',
+      '<div class="form-grid">' +
+        inputRow('ID (TECNOLOGIA_ID)', '_id_readonly', techId(tech), {full:true, readonly:true}) +
+        inputRow('Nombre visible (botón)', 'nombre_boton', techNombreBoton(tech), {full:true}) +
+      '</div>', true);
+  }
+  function nuevaTech(){
+    editing = { kind:'tech', original:null, isNew:true };
+    openModal('Nueva tecnología', 'Define su ID interno (fijo) y su nombre visible',
+      '<div class="form-grid">' +
+        inputRow('ID (ej. CLOUD, IA)', 'tech_id', '', {full:true}) +
+        inputRow('Nombre visible (botón)', 'nombre_boton', '', {full:true}) +
+      '</div>', false);
+  }
+  function eliminarTech(tech){
+    var provs = getProviders(tech);
+    if (!confirm('¿Eliminar la tecnología "' + tech + '"?\nSe quitarán sus ' + provs.length + ' proveedor(es). Los cursos NO se borran.')) return;
+    DB.asesores.rows = DB.asesores.rows.filter(function(r){ return cell('asesores', r, 'TECNOLOGIA_ID').trim().toUpperCase() !== tech.trim().toUpperCase(); });
+    if (sel.tech === tech){ sel.tech=null; sel.provider=null; sel.cert=null; clearFrom('curs'); document.getElementById('provList').innerHTML='<div class="cat-placeholder">←</div>'; document.getElementById('addProvBtn').style.display='none'; }
+    persist('asesores', 'Tecnología eliminada', function(){ renderTechs(); });
+  }
+
+  // ----- Editar / Agregar PROVEEDOR -----
+  function editProvider(provider){
+    var r = providerRow(sel.tech, provider); if (!r) return;
+    editing = { kind:'provider', original: provider, isNew:false };
+    openModal('Editar proveedor', 'de ' + sel.tech,
+      '<div class="form-grid">' +
+        inputRow('ID (PROVIDER)', '_id_readonly', cell('asesores', r, 'PROVIDER'), {full:true, readonly:true}) +
+        inputRow('Nombre del botón', 'NOMBRE_BOTON', cell('asesores', r, 'NOMBRE_BOTON'), {full:true}) +
+        inputRow('Asesor', 'ASESOR', cell('asesores', r, 'ASESOR')) +
+        inputRow('Correo del asesor', 'CORREO_ASESOR', cell('asesores', r, 'CORREO_ASESOR')) +
+        inputRow('Link de agendamiento', 'LINK_AGENDAMIENTO', cell('asesores', r, 'LINK_AGENDAMIENTO'), {full:true}) +
+      '</div>', true);
+  }
+  function nuevoProvider(){
+    if (!sel.tech){ toast('Selecciona una tecnología', true); return; }
+    editing = { kind:'provider', original:null, isNew:true };
+    openModal('Nuevo proveedor', 'en ' + sel.tech,
+      '<div class="form-grid">' +
+        inputRow('Nombre del proveedor (ej. AWS)', 'PROVIDER', '', {full:true}) +
+        inputRow('Nombre del botón', 'NOMBRE_BOTON', '', {full:true}) +
+        inputRow('Asesor', 'ASESOR', '') +
+        inputRow('Correo del asesor', 'CORREO_ASESOR', '') +
+        inputRow('Link de agendamiento', 'LINK_AGENDAMIENTO', '', {full:true}) +
+      '</div>', false);
+  }
+  function eliminarProvider(provider){
+    if (!confirm('¿Eliminar el proveedor "' + provider + '"? Los cursos NO se borran.')) return;
+    DB.asesores.rows = DB.asesores.rows.filter(function(r){
+      return !(cell('asesores', r, 'TECNOLOGIA_ID').trim().toUpperCase() === (sel.tech||'').toUpperCase()
+            && cell('asesores', r, 'PROVIDER').trim().toUpperCase() === provider.toUpperCase());
+    });
+    if (sel.provider===provider){ sel.provider=null; clearFrom('curs'); }
+    persist('asesores', 'Proveedor eliminado', function(){ renderTechs(); renderProviders(sel.tech); });
+  }
+
+  // ----- Editar / Agregar CURSO -----
+  function cursoFormBody(cursoRow, esEdicion){
+    var html = '<div class="form-grid">';
+    DB.cursos.headers.forEach(function(h){
+      var up = h.toUpperCase().trim();
+      var val = cursoRow ? (cursoRow[colIdx('cursos', h)]||'') : (up==='PROVIDER' ? sel.provider : '');
+      var full = (up==='DESCRIPCION' || up==='LINK_TEMARIO' || up==='NOMBRE_CERT') ? true : false;
+      // PROVIDER siempre readonly; CERT_ID readonly solo al EDITAR (al crear se debe escribir).
+      var ro = (up==='PROVIDER') || (up==='CERT_ID' && esEdicion);
+      html += inputRow(h, h, val, { full:full, textarea:(up==='DESCRIPCION'), readonly:ro });
+    });
+    html += '</div>';
+    return html;
+  }
+  function editCurso(certId){
+    var r = cursoRowByCert(certId); if (!r) return;
+    editing = { kind:'curso', original: certId, isNew:false };
+    openModal('Editar curso', cell('cursos', r, 'NOMBRE_CERT') || certId, cursoFormBody(r, true), true);
+  }
+  function nuevoCurso(){
+    if (!sel.provider){ toast('Selecciona un proveedor', true); return; }
+    editing = { kind:'curso', original:null, isNew:true };
+    openModal('Nuevo curso', 'en ' + sel.provider, cursoFormBody(null, false), false);
+  }
+  function eliminarCurso(certId){
+    if (!confirm('¿Eliminar el curso "' + certId + '" y todas sus modalidades?')) return;
+    DB.cursos.rows = DB.cursos.rows.filter(function(r){ return cell('cursos', r, 'CERT_ID').trim() !== certId.trim(); });
+    DB.modalidades.rows = DB.modalidades.rows.filter(function(r){ return cell('modalidades', r, 'CERT_ID').trim() !== certId.trim(); });
+    persist('cursos', null, function(){
+      persist('modalidades', 'Curso eliminado', function(){
+        if (sel.cert===certId){ sel.cert=null; clearFrom('mod'); }
+        renderCursos(sel.provider);
+      });
+    });
+  }
+
+  // ----- Editar / Agregar MODALIDAD -----
+  function modFormBody(modRow, esEdicion){
+    var html = '<div class="form-grid">';
+    DB.modalidades.headers.forEach(function(h){
+      var up = h.toUpperCase().trim();
+      if (up === 'CERT_ID') return;
+      var val = modRow ? (modRow[colIdx('modalidades', h)]||'') : '';
+      var big = (up==='TRANSFERENCIA_BANCARIA' || up==='LINK_PAGO');
+      // MODALIDAD_ID readonly solo al EDITAR (al crear se genera/escribe).
+      var ro = (up==='MODALIDAD_ID' && esEdicion);
+      html += inputRow(h, h, val, { full:big, textarea:big, readonly:ro });
+    });
+    html += '</div>';
+    return html;
+  }
+  function editModalidad(idx){
+    var r = modalidadesDeCert(sel.cert)[idx]; if (!r) return;
+    editing = { kind:'modalidad', idx: idx, isNew:false };
+    openModal('Editar modalidad', cell('modalidades', r, 'NOMBRE_MODALIDAD') || '', modFormBody(r, true), true);
+  }
+  function nuevaModalidad(){
+    if (!sel.cert){ toast('Selecciona un curso', true); return; }
+    editing = { kind:'modalidad', idx:null, isNew:true };
+    openModal('Nueva modalidad', 'para ' + sel.cert, modFormBody(null, false), false);
+  }
+  function eliminarModalidad(idx){
+    var r = modalidadesDeCert(sel.cert)[idx]; if (!r) return;
+    var nombre = cell('modalidades', r, 'NOMBRE_MODALIDAD') || cell('modalidades', r, 'MODALIDAD_ID');
+    if (!confirm('¿Eliminar la modalidad "' + nombre + '"?')) return;
+    DB.modalidades.rows = DB.modalidades.rows.filter(function(x){ return x !== r; });
+    persist('modalidades', 'Modalidad eliminada', function(){ renderModalidades(sel.cert); renderCursos(sel.provider); });
+  }
+
+  // ================= GUARDAR (según editing.kind) =================
+  function saveModal(){
+    if (!editing) return;
+    var vals = readModal();
+
+    if (editing.kind === 'tech'){
+      if (editing.isNew){
+        var tid = (vals.tech_id||'').trim().toUpperCase().replace(/[^\w]/g,'');
+        var nb  = (vals.nombre_boton||'').trim();
+        if (!tid){ toast('El ID es obligatorio', true); return; }
+        if (!nb) nb = tid;
+        var r = newRow('asesores');
+        setCell('asesores', r, 'TECNOLOGIA_ID', tid);
+        setCell('asesores', r, 'TECNOLOGIA_NOMBRE_BOTON', nb);
+        setCell('asesores', r, 'PROVIDER', tid);          // tecnología sin proveedores: provider = id
+        setCell('asesores', r, 'NOMBRE_BOTON', nb);
+        DB.asesores.rows.push(r);
+        persist('asesores', 'Tecnología agregada', function(){ closeModal(); renderTechs(); selectTech(nb); });
+      } else {
+        // Editar: solo cambia el NOMBRE VISIBLE (botón). El ID interno NO cambia.
+        var nuevoNombre = (vals.nombre_boton||'').trim();
+        if (!nuevoNombre){ toast('El nombre visible no puede estar vacío', true); return; }
+        var orig = editing.original; // TECNOLOGIA_ID
+        DB.asesores.rows.forEach(function(row){
+          if (cell('asesores', row, 'TECNOLOGIA_ID').trim().toUpperCase() === orig.trim().toUpperCase()){
+            setCell('asesores', row, 'TECNOLOGIA_NOMBRE_BOTON', nuevoNombre);
+          }
+        });
+        persist('asesores', 'Tecnología actualizada', function(){ closeModal(); renderTechs(); if (sel.tech===orig) selectTech(orig); });
+      }
+      return;
+    }
+
+    if (editing.kind === 'provider'){
+      if (editing.isNew){
+        var prov = (vals.PROVIDER||'').trim().toUpperCase();
+        if (!prov){ toast('El nombre del proveedor es obligatorio', true); return; }
+        var pr = newRow('asesores');
+        setCell('asesores', pr, 'TECNOLOGIA_ID', sel.tech);
+        setCell('asesores', pr, 'TECNOLOGIA_NOMBRE_BOTON', techNombreBoton(sel.tech));
+        setCell('asesores', pr, 'PROVIDER', prov);
+        setCell('asesores', pr, 'NOMBRE_BOTON', vals.NOMBRE_BOTON || prov);
+        setCell('asesores', pr, 'ASESOR', vals.ASESOR || '');
+        setCell('asesores', pr, 'CORREO_ASESOR', vals.CORREO_ASESOR || '');
+        setCell('asesores', pr, 'LINK_AGENDAMIENTO', vals.LINK_AGENDAMIENTO || '');
+        DB.asesores.rows.push(pr);
+        persist('asesores', 'Proveedor agregado', function(){ closeModal(); renderTechs(); selectProvider(prov); });
+      } else {
+        var row = providerRow(sel.tech, editing.original); if (!row){ closeModal(); return; }
+        ['NOMBRE_BOTON','ASESOR','CORREO_ASESOR','LINK_AGENDAMIENTO'].forEach(function(k){ if (k in vals) setCell('asesores', row, k, vals[k]); });
+        persist('asesores', 'Proveedor guardado', function(){ closeModal(); renderProviders(sel.tech); });
+      }
+      return;
+    }
+
+    if (editing.kind === 'curso'){
+      var certKey = certHeaderName();
+      var certId = (vals[certKey]||'').trim();
+      if (!certId){ toast('El CERT_ID es obligatorio', true); return; }
+      var crow = editing.isNew ? newRow('cursos') : (cursoRowByCert(editing.original) || newRow('cursos'));
+      DB.cursos.headers.forEach(function(h){ if (h in vals) setCell('cursos', crow, h, vals[h]); });
+      setCell('cursos', crow, 'PROVIDER', sel.provider);
+      if (editing.isNew) DB.cursos.rows.push(crow);
+      persist('cursos', 'Curso guardado', function(){ closeModal(); renderCursos(sel.provider); });
+      return;
+    }
+
+    if (editing.kind === 'modalidad'){
+      var mrow = editing.isNew ? newRow('modalidades') : modalidadesDeCert(sel.cert)[editing.idx];
+      if (!mrow){ closeModal(); return; }
+      setCell('modalidades', mrow, 'CERT_ID', sel.cert);
+      DB.modalidades.headers.forEach(function(h){ if (h.toUpperCase().trim()!=='CERT_ID' && h in vals) setCell('modalidades', mrow, h, vals[h]); });
+      // MODALIDAD_ID auto si viene vacío
+      if (colIdx('modalidades','MODALIDAD_ID')>=0 && !cell('modalidades', mrow, 'MODALIDAD_ID')){
+        var nm = cell('modalidades', mrow, 'NOMBRE_MODALIDAD') || 'MOD';
+        setCell('modalidades', mrow, 'MODALIDAD_ID', nm.toUpperCase().replace(/\s+/g,'_'));
+      }
+      if (editing.isNew) DB.modalidades.rows.push(mrow);
+      persist('modalidades', 'Modalidad guardada', function(){ closeModal(); renderModalidades(sel.cert); renderCursos(sel.provider); });
+      return;
+    }
+  }
+  function deleteFromModal(){
+    if (!editing) return;
+    if (editing.kind==='tech') eliminarTech(editing.original);
+    else if (editing.kind==='provider') eliminarProvider(editing.original);
+    else if (editing.kind==='curso') eliminarCurso(editing.original);
+    else if (editing.kind==='modalidad') eliminarModalidad(editing.idx);
+    closeModal();
+  }
+  function certHeaderName(){ var i = colIdx('cursos', 'CERT_ID'); return i>=0 ? DB.cursos.headers[i] : 'CERT_ID'; }
+
+  function persist(seccion, okMsg, cb){
+    ABC.callServer('guardarCatalogoData', [{ seccion: seccion, headers: DB[seccion].headers, rows: DB[seccion].rows }],
+      function(res){ if (res && res.success){ if (okMsg) toast(okMsg); if (cb) cb(); } else { toast((res && res.error) || 'Error al guardar', true); } },
+      function(err){ toast((err && err.message) || 'Error de conexión', true); });
+  }
+
+  // ================= eventos =================
+  document.getElementById('addTechBtn').addEventListener('click', nuevaTech);
+  document.getElementById('addProvBtn').addEventListener('click', nuevoProvider);
+  document.getElementById('addCursBtn').addEventListener('click', nuevoCurso);
+  document.getElementById('addModBtn').addEventListener('click', nuevaModalidad);
+  document.getElementById('reloadBtn').addEventListener('click', function(){ sel={tech:null,provider:null,cert:null}; loadAll(); });
+  document.getElementById('modalCancelBtn').addEventListener('click', closeModal);
+  document.getElementById('modalSaveBtn').addEventListener('click', saveModal);
+  document.getElementById('modalDeleteBtn').addEventListener('click', deleteFromModal);
+  document.getElementById('editModal').addEventListener('click', function(e){ if (e.target.id==='editModal') closeModal(); });
+
+  loadAll();
+})();
+</script>
+</body></html>

@@ -1,0 +1,346 @@
+<nav class="abc-nav dark-surface" id="abcNav">
+  <div class="abc-nav__inner container">
+    <a class="abc-nav__brand" href="javascript:void(0)" onclick="navegar('dashboard')">
+      <!-- logo placeholder (reemplaza por tu propio logo) -->
+      <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='32'></svg>" alt="Cloud Academy">
+    </a>
+    <button class="abc-nav__burger" id="abcNavBurger" aria-label="Menú">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+    </button>
+    <div class="abc-nav__links" id="abcNavLinks">
+      <a class="abc-nav__link" data-page="dashboard">Leads</a>
+      <a class="abc-nav__link" data-page="kanban">Pipeline</a>
+      <a class="abc-nav__link" data-page="prompt">Prompt</a>
+      <a class="abc-nav__link" data-page="catalogo">Catálogo</a>
+      <a class="abc-nav__link" data-page="flujo">Flujo</a>
+      <a class="abc-nav__link" data-page="agendamiento">Flow</a>
+      <a class="abc-nav__link" data-page="chat">Chat</a>
+    </div>
+    <div class="abc-nav__user" id="nav-user"><span class="abc-nav__user-dot"></span><span>Cargando…</span></div>
+  </div>
+</nav>
+<div id="abcToastContainer" class="toast-container"></div>
+<div id="abcModalRoot"></div>
+
+<script>
+window.ABC = (function(){
+  var USE_MOCK = !(window.google && window.google.script && window.google.script.run);
+
+  function escHtml(str){ var d=document.createElement('div'); d.textContent=(str===null||str===undefined)?'':String(str); return d.innerHTML; }
+  function escAttr(str){ return escHtml(str).replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+
+  function toast(msg,type){
+    var c=document.getElementById('abcToastContainer'); if(!c) return;
+    var el=document.createElement('div');
+    el.className='toast toast-'+(type||'info');
+    el.textContent=msg;
+    c.appendChild(el);
+    setTimeout(function(){ el.classList.add('is-out'); setTimeout(function(){ el.remove(); },220); },3200);
+  }
+  function defaultFail(err){ console.error('ABC backend error:',err); toast((err&&err.message)?err.message:'Error de conexión con el servidor','error'); }
+
+  function callServer(fn,args,onOk,onErr){
+    args = args || [];
+    if (USE_MOCK){ mockBackend(fn,args,onOk,onErr||defaultFail); return; }
+    var r = google.script.run.withSuccessHandler(onOk).withFailureHandler(onErr||defaultFail);
+    r[fn].apply(r,args);
+  }
+
+  function openModal(innerHtml){
+    var root=document.getElementById('abcModalRoot'); if(!root) return;
+    root.innerHTML='<div class="modal-overlay" id="abcModalOverlay"><div class="modal">'+innerHtml+'</div></div>';
+    document.getElementById('abcModalOverlay').addEventListener('click',function(e){ if(e.target.id==='abcModalOverlay') closeModal(); });
+  }
+  function closeModal(){ var root=document.getElementById('abcModalRoot'); if(root) root.innerHTML=''; }
+
+  var ESTADOS = {
+    INICIO:{label:'INICIO',color:'var(--st-blue)',badge:'badge-blue'},
+    NO_E_NUBE:{label:'NO E NUBE',color:'var(--st-blue)',badge:'badge-blue'},
+    NO_E_CERT:{label:'NO E CERT',color:'var(--st-blue)',badge:'badge-blue'},
+    NO_E_URGENCIA:{label:'NO E URGENCIA',color:'var(--st-blue)',badge:'badge-blue'},
+    NO_CONFIRMO_MEET:{label:'NO CONFIRMO MEET',color:'var(--st-orange)',badge:'badge-orange'},
+    CONFIRMO_MEET:{label:'CONFIRMO MEET',color:'var(--st-green)',badge:'badge-green'},
+    RECONFIRMO_MEET:{label:'RECONFIRMO MEET',color:'var(--st-green)',badge:'badge-green'},
+    MAS_DE_60_DIAS:{label:'MAS DE 60 DIAS',color:'var(--st-gray)',badge:'badge-gray'},
+    REMARKETING_FALLIDO:{label:'REMARKETING FALLIDO',color:'var(--st-red)',badge:'badge-red'}
+  };
+  // Fallback: cualquier estado no mapeado se muestra con guiones bajos reemplazados por espacios.
+  function estadoInfo(code){ return ESTADOS[code] || {label:(code?String(code).replace(/_/g,' '):'SIN ESTADO'),color:'var(--st-gray)',badge:'badge-gray'}; }
+
+  function fmtTime(ts){
+    if (!ts) return '';
+    var d=new Date(parseInt(ts,10)); if (isNaN(d.getTime())) return '';
+    var t=new Date();
+    if (d.getFullYear()===t.getFullYear() && d.getMonth()===t.getMonth() && d.getDate()===t.getDate()){
+      return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+    }
+    return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0');
+  }
+  function fmtDayLabel(ts){
+    var d=new Date(parseInt(ts,10)), t=new Date();
+    if (d.toDateString()===t.toDateString()) return 'Hoy';
+    var y=new Date(t); y.setDate(t.getDate()-1);
+    if (d.toDateString()===y.toDateString()) return 'Ayer';
+    return d.toLocaleDateString('es-PE',{day:'2-digit',month:'2-digit',year:'numeric'});
+  }
+  function modeOf(lead){ if (lead.BOT_ACTIVO!=='1') return 'manual'; if (lead.IA_ACTIVA==='1') return 'bot-ia'; return 'bot'; }
+  function modeLabel(m){ return m==='manual'?'Manual':m==='bot'?'Bot':'Bot+IA'; }
+  function originIcon(o){ return o==='bot'?'🤖 ':o==='ia'?'🧠 ':o==='asesor'?'👤 ':''; }
+  function debounce(fn,ms){ var t; return function(){ var a=arguments; clearTimeout(t); t=setTimeout(function(){ fn.apply(null,a); },ms); }; }
+  function formatWhatsAppText(escaped){
+    var html = escaped.replace(/\*([^\*\n]+)\*/g,'<strong>$1</strong>');
+    html = html.replace(/_([^_\n]+)_/g,'<em>$1</em>');
+    return html.replace(/\n/g,'<br>');
+  }
+
+  /* ===================== MOCK DB (compartida entre páginas en preview) ===================== */
+  var now = Date.now(), DAY = 86400000;
+  var mockLeads = [
+    { TELF:'51999888777', PROVIDER:'AWS', CURSO:'Solutions Architect', ESTADO_BOT:'CONFIRMO_MEET', IA_ACTIVA:'1', BOT_ACTIVO:'1', TURNOS_IA:'3', ULTIMO_MSG:'Perfecto, ahí estaré a las 19:00', ULTIMO_MSG_ORIGEN:'lead', ULTIMO_MSG_TS:String(now-4*60000), CREATED_AT:String(now-3*DAY), UPDATED_AT:String(now-4*60000) },
+    { TELF:'51987654321', PROVIDER:'AZURE', CURSO:'AZ-104', ESTADO_BOT:'NO_CONFIRMO_MEET', IA_ACTIVA:'0', BOT_ACTIVO:'1', TURNOS_IA:'1', ULTIMO_MSG:'Te comparto el link de la sesión demo', ULTIMO_MSG_ORIGEN:'bot', ULTIMO_MSG_TS:String(now-40*60000), CREATED_AT:String(now-1*DAY), UPDATED_AT:String(now-40*60000) },
+    { TELF:'51955512345', PROVIDER:'GCP', CURSO:'ACE', ESTADO_BOT:'NO_E_URGENCIA', IA_ACTIVA:'1', BOT_ACTIVO:'1', TURNOS_IA:'5', ULTIMO_MSG:'¿En cuánto tiempo necesitas certificarte?', ULTIMO_MSG_ORIGEN:'ia', ULTIMO_MSG_TS:String(now-3*3600000), CREATED_AT:String(now-2*DAY), UPDATED_AT:String(now-3*3600000) },
+    { TELF:'51944478899', PROVIDER:'AWS', CURSO:'', ESTADO_BOT:'INICIO', IA_ACTIVA:'0', BOT_ACTIVO:'1', TURNOS_IA:'0', ULTIMO_MSG:'', ULTIMO_MSG_ORIGEN:'', ULTIMO_MSG_TS:'', CREATED_AT:String(now-6*3600000), UPDATED_AT:String(now-6*3600000) },
+    { TELF:'51933345678', PROVIDER:'AZURE', CURSO:'AZ-900', ESTADO_BOT:'RECONFIRMO_MEET', IA_ACTIVA:'0', BOT_ACTIVO:'0', TURNOS_IA:'2', ULTIMO_MSG:'Gracias, ahí confirmo con mi asesor', ULTIMO_MSG_ORIGEN:'asesor', ULTIMO_MSG_TS:String(now-DAY-2*3600000), CREATED_AT:String(now-5*DAY), UPDATED_AT:String(now-DAY) },
+    { TELF:'51922234567', PROVIDER:'', CURSO:'', ESTADO_BOT:'REMARKETING_FALLIDO', IA_ACTIVA:'0', BOT_ACTIVO:'0', TURNOS_IA:'0', ULTIMO_MSG:'Ok, lo pienso y te aviso', ULTIMO_MSG_ORIGEN:'lead', ULTIMO_MSG_TS:String(now-9*DAY), CREATED_AT:String(now-12*DAY), UPDATED_AT:String(now-9*DAY) },
+    { TELF:'51911198765', PROVIDER:'GCP', CURSO:'Professional Cloud Architect', ESTADO_BOT:'MAS_DE_60_DIAS', IA_ACTIVA:'0', BOT_ACTIVO:'0', TURNOS_IA:'0', ULTIMO_MSG:'Confirmado, tu certificación quedó agendada', ULTIMO_MSG_ORIGEN:'asesor', ULTIMO_MSG_TS:String(now-70*DAY), CREATED_AT:String(now-90*DAY), UPDATED_AT:String(now-70*DAY) },
+    { TELF:'51900011222', PROVIDER:'AWS', CURSO:'CLF-C02', ESTADO_BOT:'NO_E_CERT', IA_ACTIVA:'1', BOT_ACTIVO:'1', TURNOS_IA:'1', ULTIMO_MSG:'[Imagen]', ULTIMO_MSG_ORIGEN:'lead', ULTIMO_MSG_TS:String(now-20*60000), CREATED_AT:String(now-DAY), UPDATED_AT:String(now-20*60000) }
+  ];
+  var mockConvs = {
+    '51999888777': [
+      { timestamp:String(now-DAY-3600000), origen:'lead', tipo:'text', contenido:'Hola, quiero info del curso de AWS' },
+      { timestamp:String(now-DAY-3500000), origen:'bot', tipo:'text', contenido:'¡Hola! Con gusto te ayudo. ¿Qué certificación te interesa: *Cloud Practitioner* o *Solutions Architect*?' },
+      { timestamp:String(now-DAY-3400000), origen:'bot', tipo:'text', contenido:'[Botones: Cloud Practitioner | Solutions Architect]' },
+      { timestamp:String(now-DAY-3000000), origen:'lead', tipo:'text', contenido:'Solutions Architect' },
+      { timestamp:String(now-3600000), origen:'ia', tipo:'text', contenido:'Genial, tenemos una cohorte iniciando el _lunes 19:00 (GMT-5)_.\n¿Te gustaría agendar una llamada con un asesor?' },
+      { timestamp:String(now-3500000), origen:'lead', tipo:'image', contenido:'gcs://leads/51999888777/comprobante.jpg|comprobante.jpg' },
+      { timestamp:String(now-3000000), origen:'asesor', tipo:'text', contenido:'Recibido, en un momento te confirmo tu cupo' },
+      { timestamp:String(now-240000), origen:'lead', tipo:'text', contenido:'Perfecto, ahí estaré a las 19:00' }
+    ],
+    '51987654321': [
+      { timestamp:String(now-2*3600000), origen:'lead', tipo:'text', contenido:'Buenas, vi el anuncio de Azure' },
+      { timestamp:String(now-2400000), origen:'bot', tipo:'text', contenido:'Te comparto el link de la sesión demo' },
+      { timestamp:String(now-2390000), origen:'bot', tipo:'document', contenido:'drive://1a2b3c4d|brochure-az104.pdf' }
+    ],
+    '51955512345': [
+      { timestamp:String(now-4*3600000), origen:'lead', tipo:'text', contenido:'Quiero certificarme en GCP' },
+      { timestamp:String(now-3*3600000), origen:'ia', tipo:'text', contenido:'¿En cuánto tiempo necesitas certificarte?' },
+      { timestamp:String(now-3590000), origen:'ia', tipo:'text', contenido:'[Lista: Menos de 30 días | 30 a 60 días | Más de 60 días]' }
+    ],
+    '51944478899': [],
+    '51933345678': [
+      { timestamp:String(now-DAY-3*3600000), origen:'sistema', tipo:'text', contenido:'Modo cambiado a manual por asesor' },
+      { timestamp:String(now-DAY-2*3600000), origen:'asesor', tipo:'text', contenido:'Gracias, ahí confirmo con mi asesor' }
+    ],
+    '51922234567': [ { timestamp:String(now-9*DAY), origen:'lead', tipo:'text', contenido:'Ok, lo pienso y te aviso' } ],
+    '51911198765': [ { timestamp:String(now-71*DAY), origen:'asesor', tipo:'text', contenido:'*Confirmado* tu certificación quedó agendada' } ],
+    '51900011222': [ { timestamp:String(now-1200000), origen:'lead', tipo:'image', contenido:'gcs://leads/51900011222/pantalla.png|pantalla.png' } ]
+  };
+  var mockPrompts = [
+    { fila:3, version:3, prompt:'Eres Nova, el asesor virtual de Cloud Academy. Guía al lead hacia agendar su certificación cloud con calidez y claridad...', rollout:100, fecha:String(now-2*DAY) },
+    { fila:2, version:2, prompt:'Eres Nova. Responde dudas sobre certificaciones AWS, Azure y GCP...', rollout:0, fecha:String(now-10*DAY) },
+    { fila:1, version:1, prompt:'Eres un asistente de ventas de Cloud Academy...', rollout:0, fecha:String(now-30*DAY) }
+  ];
+  var mockCatalogo = {
+    asesores: { headers:['NOMBRE','EMAIL','TELEFONO','ACTIVO'], rows:[
+      ['Advisor 1','advisor1@example.com','000000000000','1'],
+      ['Advisor 2','advisor2@example.com','000000000000','1'],
+      ['Advisor 3','advisor3@example.com','000000000000','0']
+    ]},
+    cursos: { headers:['CURSO','PROVIDER','PRECIO','DURACION'], rows:[
+      ['Cloud Practitioner','AWS','$120','27 horas en 7 sesiones'],
+      ['Solutions Architect','AWS','$210','40 horas en 10 sesiones'],
+      ['AZ-104','AZURE','$180','32 horas en 8 sesiones'],
+      ['Associate Cloud Engineer','GCP','$150','30 horas en 8 sesiones']
+    ]},
+    modalidades: { headers:['CERT_ID','NOMBRE','PROVIDER','MODALIDAD'], rows:[
+      ['CLF-C02','Cloud Practitioner','AWS','PRO'],
+      ['SAA-C03','Solutions Architect','AWS','CERTIFIED'],
+      ['AZ-104','Azure Administrator','AZURE','BASIC'],
+      ['ACE','Associate Cloud Engineer','GCP','PRO']
+    ]}
+  };
+  var mockFlujo = {
+    flujo: [
+      { id:'p1', orden:1, nombre:'Bienvenida', tipo_mensaje:'texto', mensaje:'msg_bienvenida', media:'', estado:'activo',
+        opciones:[], seguimientos:[{tiempo:'30',clave:'msg_recordatorio_1',media:'',destino:'p1'}] },
+      { id:'p2', orden:2, nombre:'Elegir tecnología', tipo_mensaje:'botones', mensaje:'msg_elegir_tech', media:'',
+        estado:'activo', opciones:[
+          { origen:'catalogo', texto:'AWS', visible:true },
+          { origen:'catalogo', texto:'AZURE', visible:true },
+          { origen:'catalogo', texto:'GCP', visible:true }
+        ], seguimientos:[] },
+      { id:'p3', orden:3, nombre:'Elegir certificación', tipo_mensaje:'lista', mensaje:'msg_elegir_cert', media:'',
+        estado:'activo', opciones:[
+          { origen:'catalogo', texto:'Cloud Practitioner', visible:true },
+          { origen:'libre', texto:'Hablar con un asesor', destino:'p5' }
+        ], seguimientos:[{tiempo:'60',clave:'msg_recordatorio_cert',media:'',destino:'p3'}] },
+      { id:'p4', orden:4, nombre:'Enviar link de sesión', tipo_mensaje:'texto', mensaje:'msg_link_sesion', media:'', estado:'activo', opciones:[], seguimientos:[] },
+      { id:'p5', orden:5, nombre:'Transferir a asesor', tipo_mensaje:'texto', mensaje:'msg_transferir', media:'', estado:'inactivo', opciones:[], seguimientos:[] }
+    ],
+    mensajes: {
+      msg_bienvenida:'¡Hola! 👋 Soy Nova, el asistente de Cloud Academy. ¿Listo para dar el siguiente paso en tu carrera cloud?',
+      msg_elegir_tech:'¿Qué proveedor cloud te interesa certificar?',
+      msg_elegir_cert:'Elige la certificación que buscas:',
+      msg_link_sesion:'Aquí tienes el link de tu sesión demo: https://example.com/demo',
+      msg_transferir:'Un asesor humano continuará esta conversación contigo.',
+      msg_recordatorio_1:'¿Seguimos? Cuéntame qué certificación te interesa 🙂',
+      msg_recordatorio_cert:'¿Aún estás decidiendo tu certificación? Puedo ayudarte a elegir.'
+    },
+    opcionesDinamicas: { tecnologias:['AWS','AZURE','GCP'], certificaciones:['Cloud Practitioner','Solutions Architect','AZ-104','ACE'] },
+    disparadores: [ { palabra:'precio', mensaje:'msg_link_sesion' }, { palabra:'humano', mensaje:'msg_transferir' } ]
+  };
+
+  function updateLeadPreview(telf,texto,origen){
+    var lead = mockLeads.find(function(l){ return l.TELF===telf; });
+    if (lead){ lead.ULTIMO_MSG=texto; lead.ULTIMO_MSG_ORIGEN=origen; lead.ULTIMO_MSG_TS=String(Date.now()); lead.UPDATED_AT=String(Date.now()); }
+  }
+
+  function mockBackend(fn,args,onOk,onErr){
+    setTimeout(function(){
+      try{
+        switch(fn){
+          case 'getBaseUrl': onOk('#'); break;
+          case 'obtenerUsuarioActual': onOk({ success:true, email:'advisor@example.com', rol:'asesor', nombre:'Asesor Demo' }); break;
+          case 'getTecnologiasYProviders': onOk({ AWS:['AWS'], AZURE:['AZURE'], GCP:['GCP'] }); break;
+          case 'getLeads': {
+            var filtros = args[0]||{}; var list = mockLeads.slice();
+            if (filtros.provider){ list = list.filter(function(l){ return l.PROVIDER===filtros.provider; }); }
+            list.sort(function(a,b){ return (parseInt(b.ULTIMO_MSG_TS||b.UPDATED_AT||'0',10)) - (parseInt(a.ULTIMO_MSG_TS||a.UPDATED_AT||'0',10)); });
+            onOk(list); break;
+          }
+          case 'getEmbudoEstados': {
+            var total = mockLeads.length; var byEstado = {};
+            mockLeads.forEach(function(l){ byEstado[l.ESTADO_BOT]=(byEstado[l.ESTADO_BOT]||0)+1; });
+            var order = ['INICIO','NO_E_NUBE','NO_E_CERT','NO_E_URGENCIA','NO_CONFIRMO_MEET','CONFIRMO_MEET','RECONFIRMO_MEET','MAS_DE_60_DIAS','REMARKETING_FALLIDO'];
+            var estados = order.map(function(id){
+              var cant = byEstado[id]||0;
+              return { id:id, label:estadoInfo(id).label, cantidad:cant, porcentaje: total? Math.round(cant/total*1000)/10 : 0 };
+            });
+            onOk({ total:total, desde:'', hasta:'', estados:estados }); break;
+          }
+          case 'getConversacion': {
+            var telefono = args[0];
+            onOk({ telefono:telefono, mensajes:(mockConvs[telefono]||[]).slice() }); break;
+          }
+          case 'enviarMensajeManual': {
+            var telf=args[0], texto=args[1];
+            (mockConvs[telf]=mockConvs[telf]||[]).push({ timestamp:String(Date.now()), origen:'asesor', tipo:'text', contenido:texto });
+            updateLeadPreview(telf,texto,'asesor'); onOk({ success:true }); break;
+          }
+          case 'enviarArchivoManual': {
+            var telf2=args[0], mime=args[2]||'', fname=args[3]||'archivo';
+            var tipo = mime.indexOf('image')===0?'image':mime.indexOf('video')===0?'video':'document';
+            (mockConvs[telf2]=mockConvs[telf2]||[]).push({ timestamp:String(Date.now()), origen:'asesor', tipo:tipo, contenido:'local://enviado|'+fname });
+            updateLeadPreview(telf2,'['+(tipo==='image'?'Imagen':tipo==='video'?'Video':'Documento')+']','asesor');
+            onOk({ success:true }); break;
+          }
+          case 'getSignedUrl': onOk(''); break;
+          case 'getTraduccionesPayload': onOk({ 'btn_CLOUD':'CLOUD ☁️', 'cert_CLF':'Cloud Practitioner' }); break;
+          case 'cambiarModoLead': {
+            var telf3=args[0], ba=args[1], ia=args[2];
+            var lead=mockLeads.find(function(l){return l.TELF===telf3;});
+            if(lead){ lead.BOT_ACTIVO=String(ba); lead.IA_ACTIVA=String(ia); }
+            onOk({ success:true }); break;
+          }
+          case 'toggleIALead': {
+            var lead2=mockLeads.find(function(l){return l.TELF===args[0];});
+            if(lead2) lead2.IA_ACTIVA = args[1]?'1':'0';
+            onOk({ success:true }); break;
+          }
+          case 'toggleBotLead': {
+            var lead3=mockLeads.find(function(l){return l.TELF===args[0];});
+            if(lead3) lead3.BOT_ACTIVO = args[1]?'1':'0';
+            onOk({ success:true }); break;
+          }
+          case 'getMensajes': {
+            var arr=[]; var i=1;
+            for (var k in mockFlujo.mensajes){ arr.push({ fila:i++, clave:k, texto:mockFlujo.mensajes[k] }); }
+            onOk(arr); break;
+          }
+          case 'updateMensaje': onOk({ success:true }); break;
+          case 'getAllPrompts': onOk(mockPrompts.slice()); break;
+          case 'getPromptActual': {
+            var actual = mockPrompts.find(function(p){return p.rollout>0;}) || mockPrompts[0];
+            onOk({ prompt:actual.prompt, version:actual.version, rollout:actual.rollout }); break;
+          }
+          case 'guardarNuevoPrompt': {
+            var v = mockPrompts.length + 1;
+            mockPrompts.unshift({ fila:v, version:v, prompt:args[0], rollout:parseInt(args[1]||0,10), fecha:String(Date.now()) });
+            onOk({ success:true, version:v }); break;
+          }
+          case 'eliminarPrompt': {
+            mockPrompts = mockPrompts.filter(function(p){return p.fila!==args[0];});
+            onOk({ success:true }); break;
+          }
+          case 'getCatalogoData': {
+            var sec = mockCatalogo[args[0]] || { headers:[], rows:[] };
+            onOk({ headers:sec.headers.slice(), rows:sec.rows.map(function(r){return r.slice();}) }); break;
+          }
+          case 'guardarCatalogoData': {
+            var data = args[0]||{};
+            mockCatalogo[data.seccion] = { headers:data.headers, rows:data.rows };
+            onOk({ success:true }); break;
+          }
+          case 'getFlujoConMensajes': onOk(JSON.parse(JSON.stringify(mockFlujo))); break;
+          case 'guardarFlujoCompleto': { mockFlujo.flujo = args[0]; onOk({ success:true }); break; }
+          case 'guardarMensajesSistema': { mockFlujo.mensajes = (args[0]&&args[0].mensajes) || args[0] || mockFlujo.mensajes; onOk({ success:true }); break; }
+          case 'getDisparadores': onOk(mockFlujo.disparadores.slice()); break;
+          case 'guardarDisparadores': { mockFlujo.disparadores = args[0]; onOk({ success:true }); break; }
+          default: onErr({ message:'Función mock no implementada: '+fn });
+        }
+      } catch(e){ onErr(e); }
+    }, 160 + Math.random()*160);
+  }
+
+  var PROVIDER_CLASS = { AWS:'p-aws', AZURE:'p-azure', GCP:'p-gcp' };
+  function providerBadge(provider){
+    if (!provider) return '<span style="color:var(--ink-300); font-size:12.5px;">—</span>';
+    var cls = PROVIDER_CLASS[provider] || '';
+    return '<span class="provider-tag ' + cls + '"><span class="provider-dot" style="background:currentColor;"></span>' + escHtml(provider) + '</span>';
+  }
+
+  return {
+    USE_MOCK: USE_MOCK, escHtml: escHtml, escAttr: escAttr, callServer: callServer, toast: toast,
+    openModal: openModal, closeModal: closeModal, estadoInfo: estadoInfo, fmtTime: fmtTime, fmtDayLabel: fmtDayLabel,
+    modeOf: modeOf, modeLabel: modeLabel, originIcon: originIcon, debounce: debounce, formatWhatsAppText: formatWhatsAppText,
+    providerBadge: providerBadge
+  };
+})();
+
+/* ===================== Nav: navegación, resaltado, usuario, burger ===================== */
+function navegar(page, extraQuery){
+  ABC.callServer('getBaseUrl', [], function(base){
+    window.top.location.href = base + '?page=' + page + (extraQuery ? '&' + extraQuery : '');
+  });
+}
+(function(){
+  Array.prototype.forEach.call(document.querySelectorAll('.abc-nav__link'), function(a){
+    a.addEventListener('click', function(){ navegar(a.getAttribute('data-page')); });
+  });
+  var burger = document.getElementById('abcNavBurger');
+  var navEl = document.getElementById('abcNav');
+  if (burger) burger.addEventListener('click', function(){ navEl.classList.toggle('is-open'); });
+
+  function highlight(page){
+    Array.prototype.forEach.call(document.querySelectorAll('.abc-nav__link'), function(a){
+      a.classList.toggle('is-active', a.getAttribute('data-page') === page);
+    });
+  }
+  var fallbackPage = document.body.getAttribute('data-page') || '';
+  if (window.google && google.script && google.script.url && google.script.url.getLocation){
+    google.script.url.getLocation(function(loc){ highlight((loc.parameter && loc.parameter.page) || fallbackPage); });
+  } else {
+    highlight(fallbackPage);
+  }
+
+  ABC.callServer('obtenerUsuarioActual', [], function(res){
+    var el = document.getElementById('nav-user');
+    if (!el) return;
+    if (res && res.success){
+      el.innerHTML = '<span class="abc-nav__user-dot"></span><span>' + ABC.escHtml(res.nombre || res.email) + '</span>';
+    } else {
+      el.innerHTML = '<span>—</span>';
+    }
+  }, function(){ var el=document.getElementById('nav-user'); if (el) el.innerHTML='<span>—</span>'; });
+})();
+</script>

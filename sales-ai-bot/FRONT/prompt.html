@@ -1,0 +1,98 @@
+<!DOCTYPE html><html><head><base target="_top">
+<?!= include('styles') ?>
+<style>
+  .prompt-grid{display:grid; grid-template-columns:1.1fr .9fr; gap:20px; align-items:start;}
+  @media (max-width:900px){ .prompt-grid{grid-template-columns:1fr;} }
+  #promptTextarea{min-height:220px; font-size:13.5px; line-height:1.6;}
+  .version-card{border:1px solid var(--ink-200); border-radius:var(--r-panel); padding:14px 16px; margin-bottom:10px; background:#fff;}
+  .version-card__head{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px;}
+  .version-card__preview{font-size:12.5px; color:var(--ink-500); max-height:54px; overflow:hidden; text-overflow:ellipsis; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;}
+  .version-card__actions{display:flex; gap:8px; margin-top:10px;}
+  .rollout-hint{font-size:12px; color:var(--ink-500); background:var(--steel-50); border-radius:var(--r-ctrl); padding:10px 12px; margin-top:10px;}
+</style>
+</head><body data-page="prompt">
+<?!= include('nav') ?>
+<div class="page container">
+  <div class="page-header">
+    <div><h1>Prompt de IA</h1><p class="subtitle">Edita el prompt del asistente y controla su rollout gradual</p></div>
+  </div>
+
+  <div class="prompt-grid">
+    <div class="card">
+      <h3 style="font-size:15px; font-weight:800; margin-bottom:12px;">Nueva versión</h3>
+      <label class="field-label">Prompt</label>
+      <textarea class="textarea" id="promptTextarea" placeholder="Escribe las instrucciones para Nova…" style="margin-top:6px;"></textarea>
+      <div class="field-row" style="margin-top:14px;">
+        <div class="field">
+          <label class="field-label">% Rollout (0-100)</label>
+          <input class="input" type="number" id="rolloutInput" min="0" max="100" value="0" style="margin-top:6px;">
+        </div>
+        <div class="field" style="align-self:flex-end;">
+          <button class="btn btn-primary" id="saveBtn" style="width:100%;">Guardar nueva versión</button>
+        </div>
+      </div>
+      <p class="rollout-hint">El rollout gradual aplica esta versión del prompt a ese porcentaje de leads nuevos; el resto sigue con la versión previa hasta que ajustes el %.</p>
+    </div>
+
+    <div>
+      <h3 style="font-size:15px; font-weight:800; margin-bottom:12px;">Versiones guardadas</h3>
+      <div id="versionsList"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  function skeleton(){
+    document.getElementById('versionsList').innerHTML = new Array(3).fill('<div class="version-card"><div class="skeleton" style="height:14px;width:40%;margin-bottom:8px;"></div><div class="skeleton" style="height:30px;"></div></div>').join('');
+  }
+  function render(versions){
+    var list = document.getElementById('versionsList');
+    if (!versions.length){ list.innerHTML = '<div class="empty-state"><p>Aún no hay versiones guardadas.</p></div>'; return; }
+    list.innerHTML = versions.map(function(v){
+      var d = new Date(parseInt(v.fecha,10)); var fecha = isNaN(d.getTime()) ? '' : d.toLocaleDateString('es-PE',{day:'2-digit',month:'2-digit',year:'numeric'});
+      return '<div class="version-card">' +
+        '<div class="version-card__head"><strong>v' + ABC.escHtml(String(v.version)) + '</strong>' +
+        '<span class="badge ' + (v.rollout>0?'badge-green':'badge-gray') + '">' + v.rollout + '% rollout</span></div>' +
+        '<div style="font-size:11.5px; color:var(--ink-300); margin-bottom:6px;">' + ABC.escHtml(fecha) + '</div>' +
+        '<div class="version-card__preview">' + ABC.escHtml(v.prompt) + '</div>' +
+        '<div class="version-card__actions">' +
+          '<button class="btn btn-secondary btn-sm" data-edit="' + v.fila + '">Editar</button>' +
+          '<button class="btn btn-danger btn-sm" data-del="' + v.fila + '">Eliminar</button>' +
+        '</div></div>';
+    }).join('');
+    Array.prototype.forEach.call(list.querySelectorAll('[data-edit]'), function(btn){
+      btn.addEventListener('click', function(){
+        var v = versions.find(function(x){ return String(x.fila)===btn.getAttribute('data-edit'); });
+        if (v){ document.getElementById('promptTextarea').value = v.prompt; document.getElementById('rolloutInput').value = v.rollout; window.scrollTo({top:0,behavior:'smooth'}); }
+      });
+    });
+    Array.prototype.forEach.call(list.querySelectorAll('[data-del]'), function(btn){
+      btn.addEventListener('click', function(){
+        if (!confirm('¿Eliminar esta versión del prompt? Esta acción no se puede deshacer.')) return;
+        ABC.callServer('eliminarPrompt', [parseInt(btn.getAttribute('data-del'),10)], function(res){
+          if (res && res.success){ ABC.toast('Versión eliminada','success'); load(); } else ABC.toast('No se pudo eliminar','error');
+        });
+      });
+    });
+  }
+  function load(){ skeleton(); ABC.callServer('getAllPrompts', [], function(v){ render(v||[]); }); }
+
+  document.getElementById('saveBtn').addEventListener('click', function(){
+    var texto = document.getElementById('promptTextarea').value.trim();
+    var rollout = parseInt(document.getElementById('rolloutInput').value || 0, 10);
+    if (!texto){ ABC.toast('El prompt no puede estar vacío','error'); return; }
+    if (rollout < 0 || rollout > 100){ ABC.toast('El rollout debe estar entre 0 y 100','error'); return; }
+    var btn = document.getElementById('saveBtn'); btn.disabled = true;
+    ABC.callServer('guardarNuevoPrompt', [texto, rollout], function(res){
+      btn.disabled = false;
+      if (res && res.success){ ABC.toast('Versión v' + res.version + ' guardada','success'); document.getElementById('promptTextarea').value=''; document.getElementById('rolloutInput').value=0; load(); }
+      else ABC.toast('No se pudo guardar','error');
+    }, function(err){ btn.disabled=false; ABC.toast((err&&err.message)||'Error al guardar','error'); });
+  });
+
+  load();
+})();
+</script>
+</body></html>

@@ -1,0 +1,552 @@
+<!DOCTYPE html><html><head><base target="_top">
+<?!= include('styles') ?>
+<style>
+  #leadsTableWrap tbody td.phone-cell{font-weight:700;}
+  #leadsTableWrap .msg-preview{max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--ink-500); display:block;}
+  .ia-badge{font-size:10.5px; font-weight:700; padding:2px 9px; border-radius:var(--r-pill);}
+  .ia-on{background:rgba(28,138,75,.12); color:var(--st-green);}
+  .ia-off{background:var(--ink-100); color:var(--ink-500);}
+  .col-filters{display:flex; gap:10px; flex-wrap:wrap; padding-bottom:14px;}
+  .col-filters .field{min-width:130px; gap:4px;}
+  .col-filters .select{font-size:12.5px; padding:7px 10px;}
+
+  /* ---------- Funnel ---------- */
+  .funnel-head{display:flex; align-items:flex-start; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:6px;}
+  .funnel-head h3{font-size:16px; font-weight:800;}
+  .funnel-head .funnel-desc{font-size:12.5px; color:var(--ink-500); margin-top:3px; max-width:560px;}
+  .funnel-range{display:flex; gap:6px; flex-wrap:wrap;}
+  .range-btn{border:1px solid var(--ink-200); background:#fff; color:var(--ink-700); font-size:12px; font-weight:700;
+    padding:6px 12px; border-radius:var(--r-pill); cursor:pointer; transition:background .14s var(--ease-in), color .14s var(--ease-in), border-color .14s var(--ease-in);}
+  .range-btn:hover{background:var(--steel-50);}
+  .range-btn.is-active{background:var(--steel); border-color:var(--steel); color:#fff;}
+  .funnel-meta{font-size:12px; color:var(--ink-500); margin:10px 0 16px;}
+  .funnel-meta strong{color:var(--ink-900);}
+  .funnel-row{display:grid; grid-template-columns:180px 1fr 96px; align-items:center; gap:14px; padding:9px 0;}
+  .funnel-row + .funnel-row{border-top:1px solid var(--ink-100);}
+  .funnel-label{font-size:12.5px; font-weight:700; color:var(--ink-700); letter-spacing:.02em;}
+  .funnel-track{height:16px; background:var(--ink-100); border-radius:999px; overflow:hidden;}
+  .funnel-fill{height:100%; border-radius:999px; width:0%; transition:width .6s var(--ease-out); min-width:2px;}
+  .funnel-nums{text-align:right; font-size:13px; font-weight:800; color:var(--ink-900);}
+  .funnel-nums small{display:block; font-weight:600; font-size:11px; color:var(--ink-500);}
+  /* Barra apilada por pauta */
+  .funnel-track.stacked{display:flex; width:0%; transition:width .6s var(--ease-out); background:transparent;}
+  .funnel-track.stacked .seg{height:100%; display:flex; align-items:center; justify-content:center; overflow:hidden;
+    min-width:0; transition:background .2s; position:relative;}
+  .funnel-track.stacked .seg:first-child{border-top-left-radius:999px; border-bottom-left-radius:999px;}
+  .funnel-track.stacked .seg:last-child{border-top-right-radius:999px; border-bottom-right-radius:999px;}
+  .funnel-track.stacked .seg-pct{font-size:9.5px; font-weight:800; color:#fff; white-space:nowrap; padding:0 2px;
+    text-shadow:0 1px 1px rgba(0,0,0,.25);}
+  @media (max-width:560px){ .funnel-row{grid-template-columns:120px 1fr 70px; gap:8px;} }
+
+  /* ---------- Pagination ---------- */
+  .pagination{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 2px; flex-wrap:wrap;}
+  .pagination__info{font-size:12.5px; color:var(--ink-500);}
+  .pagination__pages{display:flex; align-items:center; gap:4px;}
+  .page-btn{min-width:32px; height:32px; padding:0 8px; border:1px solid var(--ink-200); background:#fff; color:var(--ink-700);
+    border-radius:var(--r-ctrl); font-size:12.5px; font-weight:700; transition:background .14s var(--ease-in), color .14s var(--ease-in);}
+  .page-btn:hover{background:var(--steel-50);}
+  .page-btn.is-active{background:var(--steel); border-color:var(--steel); color:#fff;}
+  .page-btn:disabled{opacity:.4; cursor:default;}
+  .page-ellipsis{color:var(--ink-300); font-size:12.5px; padding:0 2px;}
+</style>
+</head><body data-page="dashboard">
+<?!= include('nav') ?>
+<div class="page container">
+  <div class="page-header">
+    <div>
+      <h1>Leads</h1>
+      <p class="subtitle">Monitorea el embudo de conversión y todas las conversaciones del bot</p>
+    </div>
+    <div class="actions">
+      <button class="btn btn-secondary btn-sm" id="refreshBtn">↻ Actualizar</button>
+    </div>
+  </div>
+
+  <div class="grid-summary" id="statCards"></div>
+
+  <div class="filters-bar">
+    <div class="field">
+      <label class="field-label">Tecnología</label>
+      <select class="select" id="filter-tech" onchange="onTechChange()"><option value="">Todas</option></select>
+    </div>
+    <div class="field">
+      <label class="field-label">Provider</label>
+      <select class="select" id="filter-provider"><option value="">Todos</option></select>
+    </div>
+    <div class="field">
+      <label class="field-label">Desde</label>
+      <input class="input" type="date" id="filter-desde">
+    </div>
+    <div class="field">
+      <label class="field-label">Hasta</label>
+      <input class="input" type="date" id="filter-hasta">
+    </div>
+    <button class="btn btn-primary btn-sm" id="applyFiltersBtn" style="align-self:flex-end;">Filtrar</button>
+  </div>
+
+  <!-- ===== EMBUDO (primer cuadro) ===== -->
+  <div class="card" id="funnelCard" style="margin-bottom:22px;">
+    <div class="funnel-head">
+      <div>
+        <h3>📊 Embudo de conversión</h3>
+        <p class="funnel-desc">Cuántos leads hay en cada etapa del bot, en cantidad y porcentaje. Por defecto muestra solo los pasos activos del flujo de hoy. Usa "Ver histórico" para incluir estados de pasos que ya no existen.</p>
+        <button class="range-btn" id="btnHistorico" style="margin-top:8px;">🕓 Ver histórico (todos los estados)</button>
+        <div style="margin-top:10px; display:flex; align-items:center; gap:8px;">
+          <label style="font-size:12px; font-weight:700; color:var(--ink-600);">Mostrar:</label>
+          <select class="select" id="pauta-pct-mode" style="font-size:12.5px; padding:6px 10px;">
+            <option value="cantidad">Cantidad (personas)</option>
+            <option value="reparto">Reparto en la etapa (%)</option>
+            <option value="conversion">Conversión de la pauta (%)</option>
+          </select>
+        </div>
+        <!-- Selector múltiple de pautas con color editable -->
+        <div style="margin-top:12px;">
+          <div style="font-size:12px; font-weight:700; color:var(--ink-600); margin-bottom:6px;">📣 Pautas a mostrar</div>
+          <div id="pautaChecks" style="display:flex; flex-wrap:wrap; gap:10px;"></div>
+        </div>
+      </div>
+      <div class="funnel-range" id="rangeBtns">
+        <button class="range-btn" data-range="hoy">Hoy</button>
+        <button class="range-btn" data-range="ayer">Ayer</button>
+        <button class="range-btn" data-range="hoy_ayer">Hoy y ayer</button>
+        <button class="range-btn is-active" data-range="3">Últimos 3 días</button>
+        <button class="range-btn" data-range="7">7 días</button>
+        <button class="range-btn" data-range="30">30 días</button>
+        <button class="range-btn" data-range="max">Máximo</button>
+      </div>
+    </div>
+    <div class="funnel-meta" id="funnelMeta"></div>
+    <div id="funnelBody"></div>
+  </div>
+
+  <!-- ===== TABLA DE LEADS (segundo cuadro) ===== -->
+  <div class="card" style="padding:0; overflow:hidden;">
+    <div style="padding:16px 20px 0;">
+      <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+        <div>
+          <h3 style="font-size:16px; font-weight:800;">Detalle de leads</h3>
+          <p class="subtitle" style="margin-bottom:12px;">Listado de conversaciones del rango seleccionado</p>
+        </div>
+        <button class="btn btn-secondary btn-sm" id="clearColFilters" style="display:none;">Limpiar filtros</button>
+      </div>
+      <div class="col-filters" id="colFilters">
+        <div class="field"><label class="field-label">Provider</label>
+          <select class="select" id="colf-provider"><option value="">Todos</option></select></div>
+        <div class="field"><label class="field-label">Curso</label>
+          <select class="select" id="colf-curso"><option value="">Todos</option></select></div>
+        <div class="field"><label class="field-label">Estado</label>
+          <select class="select" id="colf-estado"><option value="">Todos</option></select></div>
+        <div class="field"><label class="field-label">Turnos IA</label>
+          <select class="select" id="colf-turnos"><option value="">Todos</option></select></div>
+        <div class="field"><label class="field-label">IA</label>
+          <select class="select" id="colf-ia"><option value="">Todas</option><option value="1">On</option><option value="0">Off</option></select></div>
+      </div>
+    </div>
+    <div class="table-wrap" id="leadsTableWrap" style="border:none; border-radius:0;">
+      <table>
+        <thead><tr>
+          <th>Teléfono</th><th>Provider</th><th>Curso</th><th>Estado</th><th>Turnos IA</th><th>IA</th><th>Último mensaje</th><th>Acciones</th>
+        </tr></thead>
+        <tbody id="leadsTbody"></tbody>
+      </table>
+    </div>
+    <div class="pagination" id="pagination" style="padding:12px 20px;"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var techMap = {};
+  var PAGE_SIZE = 5, currentPage = 1, allLeads = [];
+  var serverLeads = [];   // leads tal cual vienen del servidor (antes de filtros de columna)
+  var currentRange = '3';
+  var incluirHistoricos = false;  // false = solo estados del flujo activo hoy; true = todos los históricos
+
+  function skeletonRows(n){
+    var rows = '';
+    for (var i=0;i<n;i++){
+      rows += '<tr>' + '<td colspan="8"><div class="skeleton" style="height:16px;width:100%;"></div></td>' + '</tr>';
+    }
+    return rows;
+  }
+  document.getElementById('leadsTbody').innerHTML = skeletonRows(5);
+
+  function fmtISO(d){ return d.toISOString().slice(0,10); }
+
+  // Aplica un rango rápido a los inputs de fecha. 'max' arranca en una fecha muy antigua
+  // para abarcar desde el primer lead registrado.
+  function applyRange(range){
+    var hasta = new Date();
+    var desde = new Date();
+    if (range === 'hoy'){ /* desde = hoy, hasta = hoy */ }
+    else if (range === 'ayer'){ desde.setDate(desde.getDate()-1); hasta.setDate(hasta.getDate()-1); } // solo ayer
+    else if (range === 'hoy_ayer'){ desde.setDate(desde.getDate()-1); } // ayer → hoy
+    else if (range === '3'){ desde.setDate(desde.getDate()-3); }
+    else if (range === '7'){ desde.setDate(desde.getDate()-7); }
+    else if (range === '30'){ desde.setDate(desde.getDate()-30); }
+    else if (range === 'max'){ desde = new Date('2020-01-01'); }
+    document.getElementById('filter-desde').value = fmtISO(desde);
+    document.getElementById('filter-hasta').value = fmtISO(hasta);
+  }
+  applyRange(currentRange);
+
+  function setActiveRangeBtn(range){
+    Array.prototype.forEach.call(document.querySelectorAll('#rangeBtns .range-btn'), function(b){
+      b.classList.toggle('is-active', b.getAttribute('data-range') === range);
+    });
+  }
+
+  function loadTechProviders(){
+    ABC.callServer('getTecnologiasYProviders', [], function(map){
+      techMap = map || {};
+      var techSel = document.getElementById('filter-tech');
+      Object.keys(techMap).forEach(function(t){
+        var opt = document.createElement('option'); opt.value = t; opt.textContent = t;
+        techSel.appendChild(opt);
+      });
+      populateProviders('');
+    });
+  }
+  function populateProviders(tech){
+    var provSel = document.getElementById('filter-provider');
+    var current = provSel.value;
+    provSel.innerHTML = '<option value="">Todos</option>';
+    var providers = tech ? (techMap[tech]||[]) : Array.prototype.concat.apply([], Object.keys(techMap).map(function(k){return techMap[k];}));
+    providers.forEach(function(p){
+      var opt = document.createElement('option'); opt.value = p; opt.textContent = p;
+      provSel.appendChild(opt);
+    });
+    if (providers.indexOf(current) !== -1) provSel.value = current;
+  }
+  window.onTechChange = function(){ populateProviders(document.getElementById('filter-tech').value); };
+
+  function renderStats(leads){
+    var total = leads.length;
+    var confirmados = leads.filter(function(l){ return l.ESTADO_BOT==='CONFIRMO_MEET'||l.ESTADO_BOT==='RECONFIRMO_MEET'; }).length;
+    var botActivo = leads.filter(function(l){ return l.BOT_ACTIVO==='1'; }).length;
+    var manual = total - botActivo;
+    var cards = [
+      { label:'Total leads', value:total, sub:'en el rango filtrado' },
+      { label:'Agendados', value:confirmados, sub:'confirmó o reconfirmó' },
+      { label:'Con bot activo', value:botActivo, sub:'atendidos automáticamente' },
+      { label:'En modo manual', value:manual, sub:'atendidos por asesor' }
+    ];
+    document.getElementById('statCards').innerHTML = cards.map(function(c){
+      return '<div class="stat-card"><div class="stat-label">' + ABC.escHtml(c.label) + '</div>' +
+        '<div class="stat-value">' + c.value + '</div><div class="stat-sub">' + ABC.escHtml(c.sub) + '</div></div>';
+    }).join('');
+  }
+
+  function renderTable(leads){
+    allLeads = leads;
+    var tbody = document.getElementById('leadsTbody');
+    if (!leads.length){
+      tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>' +
+        '<p>No hay leads para estos filtros.</p></div></td></tr>';
+      document.getElementById('pagination').innerHTML = '';
+      return;
+    }
+    var totalPages = Math.max(1, Math.ceil(leads.length / PAGE_SIZE));
+    if (currentPage > totalPages) currentPage = totalPages;
+    var pageLeads = leads.slice((currentPage-1)*PAGE_SIZE, currentPage*PAGE_SIZE);
+    tbody.innerHTML = pageLeads.map(function(l){
+      var estado = ABC.estadoInfo(l.ESTADO_BOT);
+      var iaOn = l.IA_ACTIVA === '1';
+      var preview = l.ULTIMO_MSG ? (ABC.originIcon(l.ULTIMO_MSG_ORIGEN) + l.ULTIMO_MSG) : 'Aún sin conversación';
+      return '<tr>' +
+        '<td class="phone-cell">+' + ABC.escHtml(l.TELF) + '</td>' +
+        '<td>' + ABC.providerBadge(l.PROVIDER) + '</td>' +
+        '<td>' + (l.CURSO ? ABC.escHtml(l.CURSO) : '<span style="color:var(--ink-300);">—</span>') + '</td>' +
+        '<td><span class="badge ' + estado.badge + '">' + ABC.escHtml(estado.label) + '</span></td>' +
+        '<td>' + ABC.escHtml(l.TURNOS_IA || '0') + '</td>' +
+        '<td><span class="ia-badge ' + (iaOn?'ia-on':'ia-off') + '">' + (iaOn?'On':'Off') + '</span></td>' +
+        '<td><span class="msg-preview" title="' + ABC.escAttr(preview) + '">' + ABC.escHtml(preview) + '</span></td>' +
+        '<td><button class="btn btn-primary btn-sm" data-telf="' + ABC.escAttr(l.TELF) + '">Chat</button></td>' +
+      '</tr>';
+    }).join('');
+    Array.prototype.forEach.call(tbody.querySelectorAll('button[data-telf]'), function(btn){
+      btn.addEventListener('click', function(){ navegar('chat', 'tel=' + encodeURIComponent(btn.getAttribute('data-telf'))); });
+    });
+    renderPagination(leads.length);
+  }
+
+  function renderPagination(total){
+    var pagEl = document.getElementById('pagination');
+    var totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+    if (currentPage > totalPages) currentPage = totalPages;
+    if (total <= PAGE_SIZE){ pagEl.innerHTML = ''; return; }
+    var start = (currentPage-1)*PAGE_SIZE + 1, end = Math.min(currentPage*PAGE_SIZE, total);
+    var nums = [];
+    for (var p=1;p<=totalPages;p++){
+      if (p===1 || p===totalPages || Math.abs(p-currentPage)<=1) nums.push(p);
+      else if (nums[nums.length-1] !== '…') nums.push('…');
+    }
+    pagEl.innerHTML =
+      '<span class="pagination__info">' + start + '–' + end + ' de ' + total + '</span>' +
+      '<div class="pagination__pages">' +
+        '<button class="page-btn" data-pg="prev"' + (currentPage===1?' disabled':'') + '>‹</button>' +
+        nums.map(function(n){ return n==='…' ? '<span class="page-ellipsis">…</span>' :
+          '<button class="page-btn' + (n===currentPage?' is-active':'') + '" data-pg="' + n + '">' + n + '</button>'; }).join('') +
+        '<button class="page-btn" data-pg="next"' + (currentPage===totalPages?' disabled':'') + '>›</button>' +
+      '</div>';
+    Array.prototype.forEach.call(pagEl.querySelectorAll('[data-pg]'), function(btn){
+      btn.addEventListener('click', function(){
+        var v = btn.getAttribute('data-pg');
+        if (v==='prev') currentPage = Math.max(1,currentPage-1);
+        else if (v==='next') currentPage = Math.min(totalPages,currentPage+1);
+        else currentPage = parseInt(v,10);
+        renderTable(allLeads);
+      });
+    });
+  }
+
+  function skeletonFunnel(){
+    document.getElementById('funnelMeta').innerHTML = '';
+    document.getElementById('funnelBody').innerHTML = new Array(6).fill('<div class="funnel-row"><div class="skeleton" style="height:14px;width:80%;"></div><div class="skeleton" style="height:16px;"></div><div class="skeleton" style="height:14px;width:60%;"></div></div>').join('');
+  }
+  // Paleta estable de colores por pauta (se asigna en orden de aparición).
+  var PAUTA_COLORS = ['#2E86DE','#27AE60','#E67E22','#8E44AD','#16A085','#E74C3C','#F39C12','#2C3E50'];
+  var _pautaColorMap = {};
+  function colorDePauta(pid){
+    if (!_pautaColorMap[pid]){
+      var idx = Object.keys(_pautaColorMap).length % PAUTA_COLORS.length;
+      _pautaColorMap[pid] = (pid === '(sin pauta)') ? '#B0B7C0' : PAUTA_COLORS[idx];
+    }
+    return _pautaColorMap[pid];
+  }
+
+  var _lastFunnelData = null; // para re-render al cambiar el modo de %
+
+  function renderFunnel(data){
+    _lastFunnelData = data;
+    var body = document.getElementById('funnelBody');
+    var meta = document.getElementById('funnelMeta');
+    var estados = (data && data.estados) || [];
+    var total = (data && data.total) || 0;
+    var pctMode = document.getElementById('pauta-pct-mode').value; // 'reparto' | 'conversion'
+
+    if (!estados.length || !total){
+      meta.innerHTML = '';
+      body.innerHTML = '<div class="empty-state"><p>No hay datos para este rango.</p></div>';
+      return;
+    }
+
+    // Tasa de agendamiento = confirmados / total
+    var agendados = 0;
+    estados.forEach(function(e){ if (e.id==='CONFIRMO_MEET'||e.id==='RECONFIRMO_MEET') agendados += e.cantidad; });
+    var tasa = total ? Math.round(agendados/total*1000)/10 : 0;
+
+    // Leyenda de pautas (colores vienen del backend/segmento)
+    var pautasVistas = {};
+    estados.forEach(function(e){ (e.segmentos||[]).forEach(function(s){ pautasVistas[s.pauta_id] = { label: s.label, color: s.color }; }); });
+    var leyenda = Object.keys(pautasVistas).map(function(pid){
+      return '<span style="display:inline-flex;align-items:center;gap:5px;margin-right:12px;font-size:11.5px;">' +
+        '<span style="width:11px;height:11px;border-radius:3px;background:' + pautasVistas[pid].color + ';display:inline-block;"></span>' +
+        ABC.escHtml(pautasVistas[pid].label) + '</span>';
+    }).join('');
+
+    meta.innerHTML = '<strong>' + total + '</strong> leads en el rango · <strong>' + agendados + '</strong> agendados · tasa <strong>' + tasa + ' %</strong>' +
+      (leyenda ? '<div style="margin-top:8px;">' + leyenda + '</div>' : '');
+
+    body.innerHTML = estados.map(function(e){
+      var segs = e.segmentos || [];
+      var barra;
+      if (segs.length){
+        // Barra apilada: cada segmento = una pauta. El ancho del segmento es su
+        // reparto dentro de la etapa (para que la barra llene el total del estado).
+        // La etiqueta/% que se muestra depende del modo elegido.
+        var anchoTotalEstado = total > 0 ? (e.cantidad / total * 100) : 0;
+        var inner = segs.map(function(s){
+          // Texto a mostrar según el modo: cantidad (personas) | reparto % | conversión %
+          var texto;
+          if (pctMode === 'cantidad') texto = s.cantidad;
+          else if (pctMode === 'conversion') texto = s.pct_conversion + '%';
+          else texto = s.pct_reparto + '%';
+          var titulo = s.label + ' · ' + s.cantidad + ' persona(s) · ' +
+            (pctMode === 'conversion' ? (s.pct_conversion + '% de su pauta llegó aquí') : (s.pct_reparto + '% de esta etapa'));
+          // ancho relativo del segmento dentro de la barra = su reparto en la etapa
+          return '<div class="seg" title="' + ABC.escAttr(titulo) + '" ' +
+            'style="width:' + s.pct_reparto + '%;background:' + (s.color || '#2E86DE') + ';">' +
+            '<span class="seg-pct">' + texto + '</span></div>';
+        }).join('');
+        barra = '<div class="funnel-track stacked" data-width="' + anchoTotalEstado + '">' + inner + '</div>';
+      } else {
+        var color = ABC.estadoInfo(e.id).color;
+        barra = '<div class="funnel-track"><div class="funnel-fill" data-pct="' + e.porcentaje + '" style="background:' + color + ';"></div></div>';
+      }
+      return '<div class="funnel-row">' +
+        '<div class="funnel-label">' + ABC.escHtml(e.label) + '</div>' +
+        barra +
+        '<div class="funnel-nums">' + e.cantidad + '<small>' + e.porcentaje + ' %</small></div>' +
+      '</div>';
+    }).join('');
+
+    requestAnimationFrame(function(){
+      Array.prototype.forEach.call(body.querySelectorAll('.funnel-fill'), function(f){ f.style.width = f.getAttribute('data-pct') + '%'; });
+      // Las barras apiladas crecen hasta el ancho total de su etapa.
+      Array.prototype.forEach.call(body.querySelectorAll('.funnel-track.stacked'), function(t){
+        t.style.width = t.getAttribute('data-width') + '%';
+      });
+    });
+  }
+
+  function loadLeads(){
+    var filtros = {
+      desde: document.getElementById('filter-desde').value,
+      hasta: document.getElementById('filter-hasta').value,
+      provider: document.getElementById('filter-provider').value,
+      orden: 'recientes',
+      incluirHistoricos: incluirHistoricos,
+      pautasIncluidas: pautasSeleccionadas  // null = todas; array = solo esas
+    };
+    document.getElementById('leadsTbody').innerHTML = skeletonRows(5);
+    skeletonFunnel();
+    ABC.callServer('getLeads', [filtros], function(leads){
+      serverLeads = leads || [];
+      renderStats(serverLeads);
+      populateColFilters(serverLeads);
+      applyColFilters();
+    });
+    ABC.callServer('getEmbudoEstados', [filtros], function(data){
+      renderFunnel(data);
+    });
+  }
+
+  // ---------- Filtros por columna (locales, sobre los leads ya cargados) ----------
+  function populateColFilters(leads){
+    var provs = {}, cursos = {}, estados = {}, turnos = {};
+    leads.forEach(function(l){
+      if (l.PROVIDER) provs[l.PROVIDER] = true;
+      if (l.CURSO) cursos[l.CURSO] = true;
+      if (l.ESTADO_BOT) estados[l.ESTADO_BOT] = true;
+      turnos[l.TURNOS_IA || '0'] = true;
+    });
+    fillSelect('colf-provider', Object.keys(provs).sort(), function(v){ return v; });
+    fillSelect('colf-curso', Object.keys(cursos).sort(), function(v){ return v; });
+    // Estado: value = codigo, texto = etiqueta legible sin guiones
+    fillSelect('colf-estado', Object.keys(estados).sort(), function(v){ return ABC.estadoInfo(v).label; });
+    fillSelect('colf-turnos', Object.keys(turnos).sort(function(a,b){ return (parseInt(a,10)||0)-(parseInt(b,10)||0); }), function(v){ return v; });
+  }
+  function fillSelect(id, values, labelFn){
+    var sel = document.getElementById(id);
+    var current = sel.value;
+    var firstOpt = sel.querySelector('option').outerHTML; // conservar "Todos/Todas"
+    sel.innerHTML = firstOpt + values.map(function(v){
+      return '<option value="' + ABC.escAttr(v) + '">' + ABC.escHtml(labelFn(v)) + '</option>';
+    }).join('');
+    if (values.indexOf(current) !== -1) sel.value = current;
+  }
+  function applyColFilters(){
+    var fp = document.getElementById('colf-provider').value;
+    var fc = document.getElementById('colf-curso').value;
+    var fe = document.getElementById('colf-estado').value;
+    var ft = document.getElementById('colf-turnos').value;
+    var fi = document.getElementById('colf-ia').value;
+    var anyActive = fp || fc || fe || ft || fi;
+    document.getElementById('clearColFilters').style.display = anyActive ? '' : 'none';
+
+    var filtered = serverLeads.filter(function(l){
+      if (fp && (l.PROVIDER||'') !== fp) return false;
+      if (fc && (l.CURSO||'') !== fc) return false;
+      if (fe && (l.ESTADO_BOT||'') !== fe) return false;
+      if (ft && String(l.TURNOS_IA||'0') !== ft) return false;
+      if (fi && (l.IA_ACTIVA==='1'?'1':'0') !== fi) return false;
+      return true;
+    });
+    currentPage = 1;
+    renderTable(filtered);
+  }
+  ['colf-provider','colf-curso','colf-estado','colf-turnos','colf-ia'].forEach(function(id){
+    document.getElementById(id).addEventListener('change', applyColFilters);
+  });
+  document.getElementById('clearColFilters').addEventListener('click', function(){
+    ['colf-provider','colf-curso','colf-estado','colf-turnos','colf-ia'].forEach(function(id){ document.getElementById(id).value=''; });
+    applyColFilters();
+  });
+
+  // Botones de rango rápido
+  document.getElementById('rangeBtns').addEventListener('click', function(e){
+    var btn = e.target.closest('.range-btn'); if (!btn) return;
+    currentRange = btn.getAttribute('data-range');
+    setActiveRangeBtn(currentRange);
+    applyRange(currentRange);
+    currentPage = 1;
+    loadLeads();
+  });
+
+  // Toggle histórico: alterna entre "solo estados activos hoy" y "todos los estados históricos"
+  document.getElementById('btnHistorico').addEventListener('click', function(){
+    incluirHistoricos = !incluirHistoricos;
+    this.classList.toggle('is-active', incluirHistoricos);
+    this.textContent = incluirHistoricos
+      ? '✅ Mostrando histórico (todos los estados)'
+      : '🕓 Ver histórico (todos los estados)';
+    loadLeads();
+  });
+
+  // Al cambiar el modo de % (reparto / conversión), re-render sin recargar del servidor.
+  document.getElementById('pauta-pct-mode').addEventListener('change', function(){
+    if (_lastFunnelData) renderFunnel(_lastFunnelData);
+  });
+
+  // ---------- Selector múltiple de pautas con color editable ----------
+  var pautasConfig = [];                 // [{id,label,color,total}]
+  var pautasSeleccionadas = null;        // array de ids incluidos (null = todas)
+
+  function renderPautaChecks(){
+    var cont = document.getElementById('pautaChecks');
+    if (!pautasConfig.length){ cont.innerHTML = '<span style="font-size:12px;color:var(--ink-400);">Aún no hay pautas registradas.</span>'; return; }
+    cont.innerHTML = pautasConfig.map(function(p){
+      var checked = (pautasSeleccionadas === null || pautasSeleccionadas.indexOf(p.id) !== -1) ? 'checked' : '';
+      return '<label style="display:inline-flex;align-items:center;gap:6px;font-size:12.5px;background:var(--ink-50);border:1px solid var(--ink-200);border-radius:var(--r-pill);padding:4px 10px;cursor:pointer;">' +
+        '<input type="checkbox" class="pauta-chk" value="' + ABC.escAttr(p.id) + '" ' + checked + '>' +
+        '<input type="color" class="pauta-color" data-id="' + ABC.escAttr(p.id) + '" value="' + ABC.escAttr(p.color) + '" title="Color de la pauta" style="width:22px;height:22px;border:none;background:none;padding:0;cursor:pointer;">' +
+        '<span>' + ABC.escHtml(p.label) + ' (' + p.total + ')</span>' +
+      '</label>';
+    }).join('');
+
+    // Checkbox → actualizar selección y recargar
+    Array.prototype.forEach.call(cont.querySelectorAll('.pauta-chk'), function(chk){
+      chk.addEventListener('change', function(){
+        var marcados = Array.prototype.filter.call(cont.querySelectorAll('.pauta-chk'), function(c){ return c.checked; })
+          .map(function(c){ return c.value; });
+        // Si están todos marcados, usar null (= todas). Si no, la lista marcada.
+        pautasSeleccionadas = (marcados.length === pautasConfig.length) ? null : marcados;
+        currentPage = 1; loadLeads();
+      });
+    });
+    // Color → guardar en servidor y re-render al vuelo
+    Array.prototype.forEach.call(cont.querySelectorAll('.pauta-color'), function(inp){
+      inp.addEventListener('change', function(){
+        var id = this.getAttribute('data-id'), color = this.value;
+        // Actualizar en memoria y en la barra sin esperar al servidor
+        var p = pautasConfig.filter(function(x){ return x.id === id; })[0];
+        if (p) p.color = color;
+        if (_lastFunnelData) {
+          (_lastFunnelData.estados || []).forEach(function(e){
+            (e.segmentos || []).forEach(function(s){ if (s.pauta_id === id) s.color = color; });
+          });
+          renderFunnel(_lastFunnelData);
+        }
+        ABC.callServer('guardarColorPauta', [id, color], function(){}, function(){ ABC.toast('No se pudo guardar el color','error'); });
+      });
+    });
+  }
+
+  // Cargar config de pautas (id, nombre, color, total) para el selector.
+  ABC.callServer('getPautasConfig', [], function(cfg){
+    pautasConfig = cfg || [];
+    renderPautaChecks();
+  });
+
+  document.getElementById('applyFiltersBtn').addEventListener('click', function(){ currentPage = 1; loadLeads(); });
+  document.getElementById('refreshBtn').addEventListener('click', function(){ currentPage = 1; loadLeads(); });
+  document.getElementById('filter-provider').addEventListener('change', function(){ currentPage = 1; loadLeads(); });
+
+  loadTechProviders();
+  loadLeads();
+})();
+</script>
+</body></html>

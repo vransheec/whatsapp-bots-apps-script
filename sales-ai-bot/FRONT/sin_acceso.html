@@ -1,0 +1,14 @@
+<!DOCTYPE html><html><head><base target="_top">
+<?!= include('styles') ?>
+</head><body data-page="sin_acceso">
+<div class="auth-shell" style="min-height:100vh;">
+  <div class="auth-box">
+    <div class="mark" style="background:rgba(214,69,69,.1);">
+      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="var(--st-red)" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><line x1="9" y1="9" x2="15" y2="15"></line><line x1="15" y1="9" x2="9" y2="15"></line></svg>
+    </div>
+    <h1>Acceso no autorizado</h1>
+    <p class="subtitle" id="errorMsg"><?= error ?></p>
+    <p class="note">Contacta al administrador para solicitar acceso al panel.</p>
+  </div>
+</div>
+</body></html>

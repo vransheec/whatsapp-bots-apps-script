@@ -1,0 +1,317 @@
+<!DOCTYPE html><html><head><base target="_top">
+<?!= include('styles') ?>
+<style>
+  .agenda-intro{font-size:13px; color:var(--ink-500); margin-bottom:18px; max-width:720px; line-height:1.5;}
+  .agenda-field{margin-bottom:20px;}
+  .agenda-field label{display:block; font-size:13px; font-weight:800; color:var(--ink-800); margin-bottom:4px;}
+  .agenda-field .hint{font-size:12px; color:var(--ink-500); margin-bottom:8px; line-height:1.4;}
+  .agenda-field textarea{width:100%; min-height:70px; resize:vertical; border:1px solid var(--ink-200);
+    border-radius:var(--r-ctrl); padding:10px 12px; font-size:13.5px; font-family:inherit; outline:none; background:var(--ink-50);}
+  .agenda-field textarea:focus{border-color:var(--steel); background:#fff;}
+  .agenda-field input[type=text]{width:100%; border:1px solid var(--ink-200); border-radius:var(--r-ctrl);
+    padding:10px 12px; font-size:13.5px; font-family:inherit; outline:none; background:var(--ink-50);}
+  .agenda-field input[type=text]:focus{border-color:var(--steel); background:#fff;}
+  .agenda-field code{background:var(--ink-100); padding:1px 5px; border-radius:4px; font-size:11.5px;}
+  .agenda-skeleton{height:70px; border-radius:var(--r-ctrl);}
+</style>
+</head><body data-page="agendamiento">
+<?!= include('nav') ?>
+<div class="page container">
+  <div class="page-header">
+    <div>
+      <h1>Flow (Agendamiento)</h1>
+      <p class="subtitle">Configura el formulario de reserva: horarios disponibles y los mensajes que ve el cliente. Se aplica a todos los pasos con rol "Agendamiento".</p>
+    </div>
+  </div>
+
+  <!-- ===== Configuración de horarios ===== -->
+  <div class="card" style="margin-bottom:22px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:12px;">
+      <h3 style="font-size:16px; font-weight:800;">🗓️ Horarios y duración</h3>
+      <button class="btn btn-success btn-sm" id="saveHorarioBtn">Guardar horarios</button>
+    </div>
+    <p class="agenda-intro">Define cuánto dura cada asesoría, el descanso entre reuniones, cuántos días hacia adelante se ofrecen, y el horario de atención por día.</p>
+    <div id="horarioFields">
+      <div class="skeleton agenda-skeleton"></div>
+    </div>
+  </div>
+
+  <!-- ===== Textos del Flow ===== -->
+  <div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:12px;">
+      <h3 style="font-size:16px; font-weight:800;">💬 Mensajes del formulario</h3>
+      <button class="btn btn-success btn-sm" id="saveBtn">Guardar mensajes</button>
+    </div>
+    <p class="agenda-intro">
+      Todos los textos que el cliente ve durante el agendamiento. En el editor de flujo aparecen bloqueados:
+      se editan únicamente desde aquí.
+    </p>
+    <div id="agendaFields">
+      <div class="skeleton agenda-skeleton" style="margin-bottom:16px;"></div>
+      <div class="skeleton agenda-skeleton" style="margin-bottom:16px;"></div>
+      <div class="skeleton agenda-skeleton"></div>
+    </div>
+  </div>
+
+  <!-- ===== Mensajes de reingreso por pauta ===== -->
+  <div class="card" style="margin-top:22px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:12px;">
+      <h3 style="font-size:16px; font-weight:800;">🔁 Reingreso por anuncio</h3>
+      <button class="btn btn-success btn-sm" id="saveReingresoBtn">Guardar mensajes</button>
+    </div>
+    <p class="agenda-intro">
+      Mensajes que recibe un lead que <b>ya existía</b> y vuelve a escribir entrando por un anuncio.
+      Tras el mensaje, el bot le ofrece (re)agendar una asesoría automáticamente.
+    </p>
+    <div id="reingresoFields">
+      <div class="skeleton agenda-skeleton" style="margin-bottom:16px;"></div>
+      <div class="skeleton agenda-skeleton"></div>
+    </div>
+  </div>
+
+  <!-- ===== Recordatorios de asesoría ===== -->
+  <div class="card" style="margin-top:22px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:12px;">
+      <h3 style="font-size:16px; font-weight:800;">⏰ Recordatorios de la cita</h3>
+      <button class="btn btn-success btn-sm" id="saveRecordBtn">Guardar mensajes</button>
+    </div>
+    <p class="agenda-intro">
+      Mensajes automáticos para reducir inasistencias: un recordatorio <b>1 día antes</b> (pide confirmar)
+      y otro <b>el día de la cita</b> (con el link si confirmó, o re-pidiendo confirmación si no).
+      Usa <code>{fecha}</code> y <code>{link}</code>. Solo se envían dentro de la ventana de 24h de WhatsApp.
+    </p>
+    <div id="recordFields">
+      <div class="skeleton agenda-skeleton" style="margin-bottom:16px;"></div>
+      <div class="skeleton agenda-skeleton" style="margin-bottom:16px;"></div>
+      <div class="skeleton agenda-skeleton"></div>
+    </div>
+  </div>
+
+  <!-- ===== Reporte diario por correo ===== -->
+  <div class="card" style="margin-top:22px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:12px;">
+      <h3 style="font-size:16px; font-weight:800;">📧 Reporte diario por correo</h3>
+      <button class="btn btn-success btn-sm" id="saveReporteBtn">Guardar</button>
+    </div>
+    <p class="agenda-intro">
+      Cada mañana se envía un correo con las sesiones del día, confirmadas vs sin confirmar,
+      a quién contactar a mano, agendamientos nuevos y un resumen de los últimos 7 días.
+    </p>
+    <div id="reporteFields">
+      <div class="skeleton agenda-skeleton" style="margin-bottom:16px;"></div>
+      <div class="skeleton agenda-skeleton"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var campos = [];
+
+  function render(cfg){
+    campos = cfg || [];
+    var cont = document.getElementById('agendaFields');
+    if (!campos.length){ cont.innerHTML = '<p style="color:var(--ink-500);">No hay textos configurables.</p>'; return; }
+    cont.innerHTML = campos.map(function(c){
+      // El CTA del botón es corto → input de una línea; el resto → textarea.
+      var esCorto = (c.clave === 'MSG_AGENDA_FLOW_CTA');
+      var control = esCorto
+        ? '<input type="text" maxlength="20" data-clave="' + ABC.escAttr(c.clave) + '" value="' + ABC.escAttr(c.texto) + '">'
+        : '<textarea data-clave="' + ABC.escAttr(c.clave) + '">' + ABC.escHtml(c.texto) + '</textarea>';
+      return '<div class="agenda-field">' +
+        '<label>' + ABC.escHtml(c.label) + '</label>' +
+        '<div class="hint">' + ABC.escHtml(c.hint) + '</div>' +
+        control +
+      '</div>';
+    }).join('');
+  }
+
+  // ---------- Mensajes de reingreso por pauta ----------
+  function renderReingreso(cfg){
+    var cont = document.getElementById('reingresoFields');
+    var lista = cfg || [];
+    if (!lista.length){ cont.innerHTML = '<p style="color:var(--ink-500);">No hay textos configurables.</p>'; return; }
+    cont.innerHTML = lista.map(function(c){
+      return '<div class="agenda-field">' +
+        '<label>' + ABC.escHtml(c.label) + '</label>' +
+        '<div class="hint">' + ABC.escHtml(c.hint) + '</div>' +
+        '<textarea data-clave="' + ABC.escAttr(c.clave) + '">' + ABC.escHtml(c.texto) + '</textarea>' +
+      '</div>';
+    }).join('');
+  }
+
+  document.getElementById('saveReingresoBtn').addEventListener('click', function(){
+    var btn = this; btn.disabled = true;
+    var datos = {};
+    Array.prototype.forEach.call(document.querySelectorAll('#reingresoFields [data-clave]'), function(el){
+      datos[el.getAttribute('data-clave')] = el.value;
+    });
+    ABC.callServer('guardarConfigReingreso', [datos], function(res){
+      btn.disabled = false;
+      if (res && res.success) ABC.toast('Mensajes de reingreso guardados');
+      else ABC.toast((res && res.error) ? res.error : 'No se pudo guardar', 'error');
+    }, function(err){ btn.disabled = false; ABC.toast((err&&err.message)||'Error al guardar','error'); });
+  });
+
+  // ---------- Recordatorios de la cita ----------
+  function renderRecord(cfg){
+    var cont = document.getElementById('recordFields');
+    var lista = cfg || [];
+    if (!lista.length){ cont.innerHTML = '<p style="color:var(--ink-500);">No hay textos configurables.</p>'; return; }
+    // Campos cortos → input de una línea; el resto → textarea.
+    var CORTOS = { 'MSG_RECORD_BTN_CONFIRMAR':20, 'MSG_RECORD_BTN_NO_PODRE':20, 'MSG_RECORD_LINK_RESPALDO':0 };
+    cont.innerHTML = lista.map(function(c){
+      var control;
+      if (CORTOS.hasOwnProperty(c.clave)){
+        var maxAttr = CORTOS[c.clave] ? (' maxlength="' + CORTOS[c.clave] + '"') : '';
+        control = '<input type="text"' + maxAttr + ' data-clave="' + ABC.escAttr(c.clave) + '" value="' + ABC.escAttr(c.texto) + '">';
+      } else {
+        control = '<textarea data-clave="' + ABC.escAttr(c.clave) + '">' + ABC.escHtml(c.texto) + '</textarea>';
+      }
+      return '<div class="agenda-field">' +
+        '<label>' + ABC.escHtml(c.label) + '</label>' +
+        '<div class="hint">' + ABC.escHtml(c.hint) + '</div>' +
+        control +
+      '</div>';
+    }).join('');
+  }
+
+  document.getElementById('saveRecordBtn').addEventListener('click', function(){
+    var btn = this; btn.disabled = true;
+    var datos = {};
+    Array.prototype.forEach.call(document.querySelectorAll('#recordFields [data-clave]'), function(el){
+      datos[el.getAttribute('data-clave')] = el.value;
+    });
+    ABC.callServer('guardarConfigRecordatorios', [datos], function(res){
+      btn.disabled = false;
+      if (res && res.success) ABC.toast('Mensajes de recordatorio guardados');
+      else ABC.toast((res && res.error) ? res.error : 'No se pudo guardar', 'error');
+    }, function(err){ btn.disabled = false; ABC.toast((err&&err.message)||'Error al guardar','error'); });
+  });
+
+  // ---------- Reporte diario por correo ----------
+  function renderReporte(cfg){
+    var cont = document.getElementById('reporteFields');
+    var lista = cfg || [];
+    if (!lista.length){ cont.innerHTML = '<p style="color:var(--ink-500);">No hay campos configurables.</p>'; return; }
+    // Destinatarios y asunto → input corto; intro → textarea.
+    var CORTOS = { 'MSG_REPORTE_DESTINATARIOS':true, 'MSG_REPORTE_ASUNTO':true };
+    cont.innerHTML = lista.map(function(c){
+      var control = CORTOS[c.clave]
+        ? '<input type="text" data-clave="' + ABC.escAttr(c.clave) + '" value="' + ABC.escAttr(c.texto) + '">'
+        : '<textarea data-clave="' + ABC.escAttr(c.clave) + '">' + ABC.escHtml(c.texto) + '</textarea>';
+      return '<div class="agenda-field">' +
+        '<label>' + ABC.escHtml(c.label) + '</label>' +
+        '<div class="hint">' + ABC.escHtml(c.hint) + '</div>' +
+        control +
+      '</div>';
+    }).join('');
+  }
+
+  document.getElementById('saveReporteBtn').addEventListener('click', function(){
+    var btn = this; btn.disabled = true;
+    var datos = {};
+    Array.prototype.forEach.call(document.querySelectorAll('#reporteFields [data-clave]'), function(el){
+      datos[el.getAttribute('data-clave')] = el.value;
+    });
+    ABC.callServer('guardarConfigReporte', [datos], function(res){
+      btn.disabled = false;
+      if (res && res.success) ABC.toast('Config del reporte guardada');
+      else ABC.toast((res && res.error) ? res.error : 'No se pudo guardar', 'error');
+    }, function(err){ btn.disabled = false; ABC.toast((err&&err.message)||'Error al guardar','error'); });
+  });
+
+  // ---------- Configuración de horarios ----------
+  var cfgHorario = null;
+
+  function renderHorario(cfg){
+    cfgHorario = cfg || {};
+    var cont = document.getElementById('horarioFields');
+    var dias = cfg.diasSemana || [];
+    var html = '';
+    // Duración, buffer, días
+    html += '<div style="display:flex; gap:16px; flex-wrap:wrap; margin-bottom:16px;">';
+    html += '<div class="agenda-field" style="margin-bottom:0;"><label>Duración de la asesoría (min)</label>' +
+            '<input type="number" min="5" id="h-duracion" value="' + ABC.escAttr(cfg.duracion) + '" style="max-width:120px;"></div>';
+    html += '<div class="agenda-field" style="margin-bottom:0;"><label>Descanso entre reuniones (min)</label>' +
+            '<input type="number" min="0" id="h-buffer" value="' + ABC.escAttr(cfg.buffer) + '" style="max-width:120px;"></div>';
+    html += '<div class="agenda-field" style="margin-bottom:0;"><label>Días hacia adelante</label>' +
+            '<input type="number" min="1" max="30" id="h-dias" value="' + ABC.escAttr(cfg.dias) + '" style="max-width:120px;"></div>';
+    html += '</div>';
+    // Horario por día
+    html += '<div style="font-size:13px; font-weight:800; margin-bottom:8px;">Horario de atención por día</div>';
+    dias.forEach(function(d){
+      var v = (cfg.horarios && cfg.horarios[d.idx]) || 'cerrado';
+      var cerrado = (!v || v.toLowerCase() === 'cerrado');
+      var partes = cerrado ? ['',''] : v.split('-');
+      html += '<div class="hora-row" data-dia="' + d.idx + '" style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">' +
+        '<label style="width:90px; font-size:12.5px; font-weight:700;">' + ABC.escHtml(d.label) + '</label>' +
+        '<label style="font-size:12px; display:inline-flex; align-items:center; gap:4px;">' +
+          '<input type="checkbox" class="h-activo" ' + (cerrado?'':'checked') + '> Abierto</label>' +
+        '<input type="time" class="h-ini" value="' + ABC.escAttr((partes[0]||'').trim()) + '"' + (cerrado?' disabled':'') + '>' +
+        '<span style="font-size:12px;">a</span>' +
+        '<input type="time" class="h-fin" value="' + ABC.escAttr((partes[1]||'').trim()) + '"' + (cerrado?' disabled':'') + '>' +
+      '</div>';
+    });
+    cont.innerHTML = html;
+
+    // Habilitar/deshabilitar horas según el checkbox
+    Array.prototype.forEach.call(cont.querySelectorAll('.hora-row'), function(row){
+      var chk = row.querySelector('.h-activo');
+      chk.addEventListener('change', function(){
+        var dis = !chk.checked;
+        row.querySelector('.h-ini').disabled = dis;
+        row.querySelector('.h-fin').disabled = dis;
+      });
+    });
+  }
+
+  document.getElementById('saveHorarioBtn').addEventListener('click', function(){
+    var btn = this; btn.disabled = true;
+    var horarios = {};
+    Array.prototype.forEach.call(document.querySelectorAll('#horarioFields .hora-row'), function(row){
+      var dia = row.getAttribute('data-dia');
+      var activo = row.querySelector('.h-activo').checked;
+      var ini = row.querySelector('.h-ini').value;
+      var fin = row.querySelector('.h-fin').value;
+      horarios[dia] = (activo && ini && fin) ? (ini + '-' + fin) : 'cerrado';
+    });
+    var datos = {
+      duracion: document.getElementById('h-duracion').value,
+      buffer: document.getElementById('h-buffer').value,
+      dias: document.getElementById('h-dias').value,
+      horarios: horarios
+    };
+    ABC.callServer('guardarConfigAgendaHorario', [datos], function(res){
+      btn.disabled = false;
+      if (res && res.success) ABC.toast('Horarios guardados');
+      else ABC.toast((res && res.error) ? res.error : 'No se pudo guardar', 'error');
+    }, function(err){ btn.disabled = false; ABC.toast((err&&err.message)||'Error al guardar','error'); });
+  });
+
+  function load(){
+    ABC.callServer('getConfigAgenda', [], function(cfg){ render(cfg); });
+    ABC.callServer('getConfigAgendaHorario', [], function(cfg){ renderHorario(cfg); });
+    ABC.callServer('getConfigReingreso', [], function(cfg){ renderReingreso(cfg); });
+    ABC.callServer('getConfigRecordatorios', [], function(cfg){ renderRecord(cfg); });
+    ABC.callServer('getConfigReporte', [], function(cfg){ renderReporte(cfg); });
+  }
+
+  document.getElementById('saveBtn').addEventListener('click', function(){
+    var btn = this; btn.disabled = true;
+    var datos = {};
+    Array.prototype.forEach.call(document.querySelectorAll('#agendaFields [data-clave]'), function(el){
+      datos[el.getAttribute('data-clave')] = el.value;
+    });
+    ABC.callServer('guardarConfigAgenda', [datos], function(res){
+      btn.disabled = false;
+      if (res && res.success) ABC.toast('Textos de agendamiento guardados');
+      else ABC.toast((res && res.error) ? res.error : 'No se pudo guardar', 'error');
+    }, function(err){ btn.disabled = false; ABC.toast((err&&err.message)||'Error al guardar','error'); });
+  });
+
+  load();
+})();
+</script>
+</body></html>

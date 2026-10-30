@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <?!= include('styles') ?>
+  <style>
+    .flujo-container { max-width: 900px; margin: 0 auto; padding-top: 32px; padding-bottom: 48px; }
+    .paso { background: #fff; border: 1px solid #e0e0e0; border-radius: 12px; margin-bottom: 16px; overflow: hidden; }
+    .paso:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .paso-header { display: flex; align-items: center; padding: 14px 18px; cursor: pointer; gap: 12px; }
+    .paso-orden { background: #2c5cc5; color: #fff; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; }
+    .paso-titulo { flex: 1; font-weight: 600; font-size: 14px; color: #333; }
+    .paso-id-badge { font-size: 10px; color: #999; background: #f0f2f5; padding: 2px 6px; border-radius: 4px; font-family: monospace; }
+    .paso-badge { font-size: 11px; color: #666; background: #f0f2f5; padding: 3px 8px; border-radius: 10px; }
+    .paso-toggle { font-size: 18px; color: #999; transition: transform 0.2s; }
+    .paso-toggle.open { transform: rotate(180deg); }
+    .paso-body { display: none; padding: 0 18px 18px; border-top: 1px solid #f0f2f5; }
+    .paso-body.open { display: block; padding-top: 14px; }
+    .paso-inactive { opacity: 0.5; }
+    .paso-inactive .paso-orden { background: #999; }
+    .field-group { margin-bottom: 14px; }
+    .field-group label { display: block; font-size: 12px; font-weight: 600; color: #555; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.3px; }
+    .field-group input, .field-group textarea, .field-group select { width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; font-family: inherit; }
+    .field-group textarea { min-height: 70px; resize: vertical; }
+    .field-group input:focus, .field-group textarea:focus, .field-group select:focus { border-color: #2c5cc5; outline: none; }
+    .field-group input[readonly] { background: #f5f5f5; color: #888; cursor: default; }
+    .opciones-list { margin-top: 8px; }
+    .opcion-item { display: flex; gap: 8px; align-items: center; margin-bottom: 6px; padding: 10px; background: #f8f9fb; border-radius: 8px; }
+    .opcion-item input { flex: 1; min-width: 100px; }
+    .opcion-item select { width: 180px; font-size: 12px; }
+    .opcion-item .btn-rm { background: none; border: none; cursor: pointer; color: #e74c3c; font-size: 16px; padding: 4px; flex-shrink: 0; }
+    .opcion-label { font-size: 11px; color: #888; margin-bottom: 2px; }
+    .opcion-oculta { opacity: 0.4; }
+    .btn-vis { background: none; border: none; cursor: pointer; font-size: 18px; padding: 4px; flex-shrink: 0; }
+    .agregar-panel { margin-top: 8px; padding: 12px; background: #eef6ff; border-radius: 8px; border: 1px dashed #2c5cc5; }
+    .agregar-panel input { margin-top: 8px; width: 100%; }
+    .nota-info { font-size: 11px; color: #2c5cc5; background: #eef6ff; padding: 8px 12px; border-radius: 6px; margin-bottom: 8px; }
+    .warning { font-size: 11px; color: #e67e22; background: #fef9e7; padding: 6px 10px; border-radius: 6px; margin-top: 4px; }
+    .error-msg { font-size: 11px; color: #e74c3c; background: #fdecea; padding: 6px 10px; border-radius: 6px; margin-top: 4px; }
+    .char-count { font-size: 10px; color: #999; text-align: right; margin-top: 2px; }
+    .char-count.over { color: #e74c3c; font-weight: 600; }
+    .seg-list { margin-top: 8px; }
+    .seg-item { margin-bottom: 10px; padding: 12px; background: #fef9e7; border-radius: 8px; border-left: 3px solid #f39c12; }
+    .seg-item .seg-header { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+    .seg-item .seg-header input, .seg-item .seg-header select { flex: 1; min-width: 80px; }
+    .seg-item textarea { width: 100%; min-height: 50px; padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; font-family: inherit; resize: vertical; }
+    .seg-item textarea:focus { border-color: #f39c12; outline: none; }
+    .seg-item .btn-rm { background: none; border: none; cursor: pointer; color: #e74c3c; font-size: 16px; padding: 4px; }
+    .paso-actions { display: flex; gap: 8px; margin-top: 14px; padding-top: 14px; border-top: 1px solid #f0f2f5; }
+    .conector { text-align: center; padding: 4px 0; }
+    .conector-line { width: 2px; height: 20px; background: #2c5cc5; margin: 0 auto; }
+    .toolbar-flujo { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .toolbar-flujo h2 { font-size: 20px; color: #1a1a2e; }
+    .toast { position: fixed; bottom: 20px; right: 20px; background: #27ae60; color: #fff; padding: 12px 20px; border-radius: 8px; font-size: 14px; display: none; z-index: 1001; box-shadow: 0 4px 12px rgba(0,0,0,0.15); white-space: pre-line; max-width: 400px; }
+    .toast.error { background: #e74c3c; }
+    .hint { font-size: 11px; color: #999; margin-top: 3px; }
+    .filtro-prov { margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+    .filtro-prov label { font-size: 12px; font-weight: 600; color: #555; }
+    .filtro-prov select { width: auto; padding: 6px 10px; font-size: 12px; }
+
+    /* Toggle switch para activar/desactivar disparadores */
+    .disp-switch { position: relative; display: inline-block; width: 40px; height: 22px; flex-shrink: 0; }
+    .disp-switch input { opacity: 0; width: 0; height: 0; }
+    .disp-slider { position: absolute; cursor: pointer; inset: 0; background: #c4c9d4; border-radius: 22px; transition: background .2s ease; }
+    .disp-slider::before { content: ""; position: absolute; height: 16px; width: 16px; left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: transform .2s ease; box-shadow: 0 1px 2px rgba(0,0,0,.25); }
+    .disp-switch input:checked + .disp-slider { background: #27ae60; }
+    .disp-switch input:checked + .disp-slider::before { transform: translateX(18px); }
+  </style>
+</head>
+<body>
+  <?!= include('nav') ?>
+  <div class="container flujo-container">
+    <div class="toolbar-flujo">
+      <h2>Editor de Flujo</h2>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-primary" onclick="agregarPaso()">+ Nuevo paso</button>
+        <button class="btn btn-success" onclick="guardarFlujo()">Guardar todo</button>
+      </div>
+    </div>
+    <div id="flujo-pasos"><p style="text-align:center;color:#999;padding:40px;">Cargando flujo...</p></div>
+
+    <!-- Disparadores -->
+    <div class="card" style="margin-top:30px;">
+      <h2 style="font-size:18px;margin-bottom:4px;">Disparadores automáticos</h2>
+      <p style="font-size:12px;color:#666;margin-bottom:16px;">Mensajes que el bot envía cuando detecta palabras clave del cliente. Si están desactivados, la IA maneja la respuesta.</p>
+      <div id="disparadores-container"></div>
+      <div style="margin-top:12px;display:flex;gap:8px;">
+        <button class="btn btn-primary btn-sm" onclick="agregarDisparador()">+ Agregar disparador</button>
+        <button class="btn btn-success btn-sm" onclick="guardarDisparadores()">Guardar disparadores</button>
+      </div>
+    </div>
+  </div>
+  <div class="toast" id="toast"></div>
+  <script>
+    // El nombre de usuario en el nav lo autogestiona nav.html (obtenerUsuarioActual).
+    var flujo = [], mensajesTexto = {}, opcionesDinamicas = {}, rolesPaso = [];
+    var openPasoIdx = -1, mostrandoAgregarEn = -1;
+    var filtroProv = {};
+    var eliminaciones = 0; // contador de pasos/opciones eliminadas en esta sesión
+
+    var NOTAS_FUENTE = {
+      'Asesores.TECNOLOGIA': 'ℹ️ Para añadir nuevas tecnologías, edítalas en Catálogo → Asesores',
+      'Asesores.PROVIDER': 'ℹ️ Para añadir nuevos providers, edítalos en Catálogo → Asesores',
+      'Cursos': 'ℹ️ Para añadir nuevas certificaciones, edítalas en Catálogo → Cursos'
+    };
+
+    function detectarFuente(paso) {
+      var e = (paso.estado || '').toUpperCase();
+      if (e === 'INICIO' || e === 'NO_E_TECNOLOGIA') return 'Asesores.TECNOLOGIA';
+      if (e === 'NO_E_NUBE') return 'Asesores.PROVIDER';
+      if (e === 'NO_E_CERT') return 'Cursos';
+      return 'libre';
+    }
+
+    function cargarFlujo() {
+      google.script.run.withSuccessHandler(function(data) {
+        flujo = data.flujo || []; mensajesTexto = data.mensajes || {}; opcionesDinamicas = data.opcionesDinamicas || {}; rolesPaso = data.roles || [];
+        // Limpiar opciones huérfanas (apuntan a pasos que no existen)
+        var estadosExistentes = flujo.map(function(p) { return p.estado; });
+        flujo.forEach(function(paso) {
+          if (!paso.opciones) return;
+          paso.opciones = paso.opciones.filter(function(op) {
+            // Mantener si no tiene siguiente, o si el siguiente existe, o si no es libre
+            if (!op.siguiente) return true;
+            if (estadosExistentes.includes(op.siguiente)) return true;
+            // Es huérfana (apunta a paso inexistente) — eliminar silenciosamente
+            return false;
+          });
+        });
+        renderFlujo();
+        disparadores = data.disparadores || [];
+        renderDisparadores();
+      }).getFlujoConMensajes();
+    }
+
+    function resolverTexto(clave) {
+      if (!clave) return '';
+      // Si no parece una clave (no empieza con MSG_), es texto directo
+      if (!clave.startsWith('MSG_')) return clave;
+      // Intentar resolver la clave exacta
+      if (mensajesTexto[clave] && mensajesTexto[clave] !== clave) return mensajesTexto[clave];
+      // Intentar resolver con variables (ej: MSG_SEG_NO_E_CERT_18H_{PROVIDER} → probar con primer provider)
+      if (clave.includes('{PROVIDER}')) {
+        var provs = opcionesDinamicas['Asesores.PROVIDER'] || [];
+        if (provs.length) {
+          var resuelta = clave.replace('{PROVIDER}', provs[0]);
+          if (mensajesTexto[resuelta]) return mensajesTexto[resuelta] + '\n\n⚠️ Nota: este texto usa {{provider}} — se reemplaza según el lead';
+        }
+      }
+      return clave;
+    }
+
+    // Límite de caracteres según tipo de paso
+    function maxChars(paso) { return paso.tipo_mensaje === 'list' ? 24 : 20; }
+    function generarId(texto, prefijo) { if (!texto) return prefijo + '_NUEVO'; return prefijo + '_' + texto.toUpperCase().replace(/[^\w\s]/g,'').replace(/\s+/g,'_').substring(0,15); }
+
+    // Nombre amigable de un paso (usa nombre_amigable si existe, sino estado)
+    function nombreAmigable(paso) { return paso.nombre_amigable || paso.estado || 'Sin nombre'; }
+    function nombreAmigablePorEstado(estado) {
+      var p = flujo.find(function(f) { return f.estado === estado; });
+      return p ? nombreAmigable(p) : estado;
+    }
+
+    // ── Render ──
+    function renderFlujo() {
+      var container = document.getElementById('flujo-pasos');
+      if (!flujo.length) { container.innerHTML = '<p style="text-align:center;color:#999;padding:40px;">No hay pasos.</p>'; return; }
+      container.innerHTML = flujo.map(function(paso, idx) {
+        var isOpen = openPasoIdx === idx;
+        var tipoLabel = paso.tipo_mensaje === 'button' ? 'Botones' : paso.tipo_mensaje === 'list' ? 'Lista' : 'Texto';
+        return '<div class="paso' + (paso.activo === false ? ' paso-inactive' : '') + '">' +
+          '<div class="paso-header" onclick="togglePaso(' + idx + ')">' +
+            '<span class="paso-orden">' + (idx+1) + '</span>' +
+            '<span class="paso-titulo">' + esc(nombreAmigable(paso)) + '</span>' +
+            '<span class="paso-id-badge">' + esc(paso.estado) + '</span>' +
+            '<span class="paso-badge">' + tipoLabel + '</span>' +
+            '<span class="paso-toggle' + (isOpen ? ' open' : '') + '">▼</span>' +
+          '</div>' +
+          '<div class="paso-body' + (isOpen ? ' open' : '') + '">' + (isOpen ? renderPasoBody(paso, idx) : '') + '</div></div>' +
+          (idx < flujo.length-1 ? '<div class="conector"><div class="conector-line"></div></div>' : '');
+      }).join('');
+    }
+
+    function renderPasoBody(paso, idx) {
+      var fuente = detectarFuente(paso);
+      var nota = NOTAS_FUENTE[fuente] || '';
+      var filtroHtml = '';
+      if (fuente === 'Cursos') {
+        var provs = opcionesDinamicas['Asesores.PROVIDER'] || [];
+        var selProv = filtroProv[idx] || '';
+        filtroHtml = '<div class="filtro-prov"><label>Filtrar por provider:</label><select onchange="filtroProv[' + idx + ']=this.value;renderFlujo();">' +
+          '<option value="">Todos</option>' + provs.map(function(p) { return '<option value="' + p + '"' + (selProv === p ? ' selected' : '') + '>' + p + '</option>'; }).join('') + '</select></div>';
+      }
+
+      // Validación: opciones visibles
+      var opcionesVisibles = (paso.opciones || []).filter(function(op) { return op.visible !== false; });
+      var warningBotones = '';
+      if (paso.tipo_mensaje === 'button') {
+        var totalVis = opcionesVisibles.length;
+        // Para pasos dinámicos, contar del catálogo
+        if (fuente !== 'libre') {
+          var catalogo = getTodasOpcionesCatalogo(paso, idx);
+          var guardadas = {};
+          (paso.opciones || []).forEach(function(op) { guardadas[op.id] = op; });
+          totalVis = catalogo.filter(function(c) { var g = guardadas[c.id]; return !g || g.visible !== false; }).length;
+          totalVis += (paso.opciones || []).filter(function(op) { return op._esLibre && op.visible !== false; }).length;
+        }
+        if (totalVis > 3) warningBotones = '<div class="warning">⚠️ WhatsApp permite máximo 3 botones. Tienes ' + totalVis + ' opciones visibles. Oculta algunas o cambia a "Lista desplegable".</div>';
+      }
+
+      var estadoOpts = flujo.map(function(p) { return '<option value="' + p.estado + '">' + esc(nombreAmigable(p)) + ' (' + p.estado + ')</option>'; }).join('');
+
+      return '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">' +
+        '<div class="field-group"><label>Nombre del paso</label><input type="text" value="' + esc(paso.nombre_amigable || '') + '" placeholder="Ej: Saludo inicial, Elegir certificación..." onchange="updateField(' + idx + ',\'nombre_amigable\',this.value)"><div class="hint">Nombre visible en el editor</div></div>' +
+        '<div class="field-group"><label>ID interno</label><input type="text" value="' + esc(paso.estado) + '" readonly><div class="hint">No se puede cambiar (lo usa el sistema)</div></div></div>' +
+        '<div class="field-group"><label>Tipo de respuesta</label><select onchange="updateField(' + idx + ',\'tipo_mensaje\',this.value)">' +
+          '<option value="button"' + (paso.tipo_mensaje==='button'?' selected':'') + '>Botones (máx 3)</option>' +
+          '<option value="list"' + (paso.tipo_mensaje==='list'?' selected':'') + '>Lista desplegable</option>' +
+          '<option value="text"' + (paso.tipo_mensaje==='text'?' selected':'') + '>Solo texto</option></select></div>' +
+        '<div class="field-group"><label>Rol del paso</label><select onchange="updateField(' + idx + ',\'rol\',this.value)">' +
+          rolesPaso.map(function(r){ return '<option value="' + esc(r.id) + '"' + ((paso.rol||'normal')===r.id?' selected':'') + '>' + esc(r.label) + '</option>'; }).join('') +
+          '</select><div class="hint">Define QUÉ hace este paso (elegir provider, agendar, cierre...). El bot actúa según el rol, no según el nombre, para que puedas renombrar sin romper nada.</div></div>' +
+        '<div class="field-group"><label>Mensaje del bot</label><textarea onchange="updateField(' + idx + ',\'mensaje\',this.value)">' + esc(resolverTexto(paso.mensaje)) + '</textarea><div class="hint">Texto que ve el cliente en WhatsApp. Es obligatorio si hay botones o lista.</div><div class="hint">Variables: <code>{{link}}</code> <code>{{provider}}</code> <code>{{curso}}</code> <code>{{tecnologia}}</code></div></div>' +
+        // Aviso para pasos con rol "agenda": los textos del Flow se editan en la página Agendamiento.
+        ((paso.rol === 'agenda') ?
+          '<div class="field-group" style="border-left:3px solid #25D366;padding-left:10px;background:#f0fdf4;border-radius:8px;padding:10px 12px;">' +
+            '<label>📅 Formulario de agendamiento (Flow)</label>' +
+            '<div class="hint" style="margin-bottom:8px;">Este paso envía el formulario de reserva. <strong>Todos sus textos</strong> (mensaje, botón, confirmación, etc.) se editan en una sola página para mantenerlos consistentes en todos los pasos de agenda.</div>' +
+            '<button type="button" class="btn btn-sm" style="background:#25D366;color:#fff;" onclick="irAAgendamiento()">✏️ Editar textos del formulario →</button>' +
+            '<div class="hint" style="margin-top:6px;">Si dejas vacío el "Mensaje del bot" de arriba, solo se enviará el formulario (sin un mensaje previo aparte).</div>' +
+          '</div>' : '') +
+        '<div class="field-group"><label>Imagen o video (opcional)</label>' + renderMediaSelector(paso.media_clave, idx, 'media_clave') + '</div>' +
+        (paso.tipo_mensaje !== 'text' ? '<div class="field-group"><label>Opciones para el cliente</label>' +
+          (nota ? '<div class="nota-info">' + nota + '</div>' : '') + filtroHtml + warningBotones +
+          renderOpciones(paso, idx, estadoOpts) + '</div>' : '') +
+        '<div class="field-group"><label>Seguimientos (si no responde)</label>' + renderSeguimientos(paso, idx, estadoOpts) +
+          '<button class="btn btn-sm" style="margin-top:8px;background:#f39c12;color:#fff;" onclick="agregarSeguimiento(' + idx + ')">+ Seguimiento</button></div>' +
+        '<div class="field-group"><label>Estado del paso</label><select onchange="updateField(' + idx + ',\'activo\',this.value===\'true\')"><option value="true"' + (paso.activo!==false?' selected':'') + '>Activo</option><option value="false"' + (paso.activo===false?' selected':'') + '>Inactivo</option></select></div>' +
+        '<div class="paso-actions"><button class="btn btn-sm" onclick="moverPaso(' + idx + ',-1)"' + (idx===0?' disabled':'') + '>↑</button><button class="btn btn-sm" onclick="moverPaso(' + idx + ',1)"' + (idx===flujo.length-1?' disabled':'') + '>↓</button><button class="btn btn-sm btn-danger" onclick="eliminarPaso(' + idx + ')">Eliminar</button></div>';
+    }
+
+    function renderOpciones(paso, pasoIdx, estadoOpts) {
+      var fuente = detectarFuente(paso);
+      var opciones = paso.opciones || [];
+      var html = '<div class="opciones-list">';
+
+      if (fuente !== 'libre') {
+        var todas = getTodasOpcionesCatalogo(paso, pasoIdx);
+        var opcionesGuardadas = {};
+        opciones.forEach(function(op) { opcionesGuardadas[op.id] = op; });
+
+        if (!todas.length) {
+          html += '<p style="font-size:12px;color:#999;">No hay opciones disponibles' + (fuente === 'Cursos' ? ' para este provider' : '') + '</p>';
+        } else {
+          html += todas.map(function(item) {
+            var guardada = opcionesGuardadas[item.id];
+            var oculta = guardada ? guardada.visible === false : false;
+            var siguiente = guardada ? (guardada.siguiente || '') : '';
+            var charCount = item.valor.length;
+            var limit = maxChars(paso);
+            var charClass = charCount > limit ? ' over' : '';
+            return '<div class="opcion-item' + (oculta ? ' opcion-oculta' : '') + '">' +
+              '<button class="btn-vis" onclick="toggleVisCatalogo(' + pasoIdx + ',\'' + esc(item.id) + '\')" title="' + (oculta ? 'Mostrar' : 'Ocultar') + '">' + (oculta ? '👁️‍🗨️' : '👁️') + '</button>' +
+              '<div style="flex:1;"><div class="opcion-label">Opción del catálogo</div><input type="text" value="' + esc(item.valor) + '" readonly style="background:#e8f4e8;">' +
+                '<div class="char-count' + charClass + '">' + charCount + '/' + limit + ' caracteres</div></div>' +
+              '<div style="width:180px;"><div class="opcion-label">Lleva a</div><select onchange="updateOpcionCatalogo(' + pasoIdx + ',\'' + esc(item.id) + '\',\'siguiente\',this.value)"><option value="">(Mismo paso)</option>' +
+                estadoOpts.replace('value="' + siguiente + '"','value="' + siguiente + '" selected') + '</select></div></div>';
+          }).join('');
+        }
+
+        // Opciones libres
+        var libres = opciones.filter(function(op) { return op._esLibre; });
+        if (libres.length) {
+          html += '<div style="margin-top:8px;border-top:1px dashed #ddd;padding-top:8px;"><div class="opcion-label" style="margin-bottom:6px;">Acciones personalizadas</div>';
+          html += libres.map(function(op) {
+            var opIdx = opciones.indexOf(op);
+            var oculta = op.visible === false;
+            var charCount = (op.titulo||'').length;
+            var limit = maxChars(paso);
+            var charClass = charCount > limit ? ' over' : '';
+            return '<div class="opcion-item' + (oculta ? ' opcion-oculta' : '') + '">' +
+              '<button class="btn-vis" onclick="toggleVisibilidad(' + pasoIdx + ',' + opIdx + ')">' + (oculta ? '👁️‍🗨️' : '👁️') + '</button>' +
+              '<div style="flex:1;"><div class="opcion-label">Texto del botón</div><input type="text" value="' + esc(op.titulo||'') + '" onchange="updateOpcionTitulo(' + pasoIdx + ',' + opIdx + ',this.value)" maxlength="' + limit + '">' +
+                '<div class="char-count' + charClass + '">' + charCount + '/' + limit + ' caracteres</div></div>' +
+              '<div style="width:180px;"><div class="opcion-label">Lleva a</div><select onchange="updateOpcion(' + pasoIdx + ',' + opIdx + ',\'siguiente\',this.value)"><option value="">(Mismo paso)</option>' +
+                estadoOpts.replace('value="'+(op.siguiente||'')+'"','value="'+(op.siguiente||'')+'" selected') + '</select></div>' +
+              '<button class="btn-rm" onclick="rmOpcion(' + pasoIdx + ',' + opIdx + ')">✕</button></div>';
+          }).join('') + '</div>';
+        }
+      } else {
+        if (!opciones.length) html += '<p style="font-size:12px;color:#999;">Sin opciones</p>';
+        else html += opciones.map(function(op, opIdx) {
+          var oculta = op.visible === false;
+          var charCount = (resolverTexto(op.titulo)||op.titulo||'').length;
+          var limit = maxChars(paso);
+          var charClass = charCount > limit ? ' over' : '';
+          return '<div class="opcion-item' + (oculta ? ' opcion-oculta' : '') + '">' +
+            '<button class="btn-vis" onclick="toggleVisibilidad(' + pasoIdx + ',' + opIdx + ')">' + (oculta ? '👁️‍🗨️' : '👁️') + '</button>' +
+            '<div style="flex:1;"><div class="opcion-label">Texto del botón</div><input type="text" value="' + esc(resolverTexto(op.titulo)||op.titulo||'') + '" onchange="updateOpcionTitulo(' + pasoIdx + ',' + opIdx + ',this.value)" maxlength="' + limit + '">' +
+              '<div class="char-count' + charClass + '">' + charCount + '/' + limit + ' caracteres</div></div>' +
+            '<div style="width:180px;"><div class="opcion-label">Lleva a</div><select onchange="updateOpcion(' + pasoIdx + ',' + opIdx + ',\'siguiente\',this.value)"><option value="">(Mismo paso)</option>' +
+              estadoOpts.replace('value="'+(op.siguiente||'')+'"','value="'+(op.siguiente||'')+'" selected') + '</select></div>' +
+            '<button class="btn-rm" onclick="rmOpcion(' + pasoIdx + ',' + opIdx + ')">✕</button></div>';
+        }).join('');
+      }
+      html += '</div>';
+
+      if (mostrandoAgregarEn === pasoIdx) {
+        html += renderPanelAgregar(paso, pasoIdx);
+      } else {
+        var btnLabel = fuente !== 'libre' ? '+ Agregar acción personalizada' : '+ Agregar opción';
+        html += '<button class="btn btn-sm btn-primary" style="margin-top:8px;" onclick="mostrarAgregar(' + pasoIdx + ')">' + btnLabel + '</button>';
+      }
+      return html;
+    }
+
+    function getTodasOpcionesCatalogo(paso, pasoIdx) {
+      var fuente = detectarFuente(paso);
+      if (fuente === 'Cursos') {
+        var todas = opcionesDinamicas['Cursos'] || [];
+        var prov = filtroProv[pasoIdx] || '';
+        if (prov) todas = todas.filter(function(c) { return c.provider === prov; });
+        return todas.map(function(c) { return { valor: c.nombre, id: 'cert_' + c.cert_id }; });
+      }
+      if (fuente === 'Asesores.TECNOLOGIA') {
+        var tNombres = opcionesDinamicas['Asesores.TECNOLOGIA_NOMBRES'] || {};
+        return (opcionesDinamicas['Asesores.TECNOLOGIA'] || []).map(function(t) {
+          return { valor: tNombres[t] || t, id: generarId(t, 'btn') };
+        });
+      }
+      if (fuente === 'Asesores.PROVIDER') {
+        var pNombres = opcionesDinamicas['Asesores.PROVIDER_NOMBRES'] || {};
+        return (opcionesDinamicas['Asesores.PROVIDER'] || []).map(function(p) {
+          return { valor: pNombres[p] || p, id: generarId(p, 'btn') };
+        });
+      }
+      return [];
+    }
+
+    function toggleVisCatalogo(pasoIdx, opId) {
+      if (!flujo[pasoIdx].opciones) flujo[pasoIdx].opciones = [];
+      var existente = flujo[pasoIdx].opciones.find(function(op) { return op.id === opId; });
+      if (existente) { existente.visible = existente.visible === false ? true : false; }
+      else {
+        var catalogo = getTodasOpcionesCatalogo(flujo[pasoIdx], pasoIdx);
+        var item = catalogo.find(function(c) { return c.id === opId; });
+        flujo[pasoIdx].opciones.push({ id: opId, titulo: item ? item.valor : opId, siguiente: '', visible: false });
+      }
+      openPasoIdx = pasoIdx; renderFlujo();
+    }
+
+    function updateOpcionCatalogo(pasoIdx, opId, field, value) {
+      if (!flujo[pasoIdx].opciones) flujo[pasoIdx].opciones = [];
+      var existente = flujo[pasoIdx].opciones.find(function(op) { return op.id === opId; });
+      if (existente) { existente[field] = value; }
+      else {
+        var catalogo = getTodasOpcionesCatalogo(flujo[pasoIdx], pasoIdx);
+        var item = catalogo.find(function(c) { return c.id === opId; });
+        var nueva = { id: opId, titulo: item ? item.valor : opId, siguiente: '', visible: true };
+        nueva[field] = value; flujo[pasoIdx].opciones.push(nueva);
+      }
+    }
+
+    function renderPanelAgregar(paso, pasoIdx) {
+      var fuente = detectarFuente(paso);
+      var limit = maxChars(paso);
+      var nota = fuente !== 'libre' ? '⚠️ Esta opción es para acciones del flujo (ej: Volver al menú, Agendar asesor). No se vincula al catálogo.' : '';
+      return '<div class="agregar-panel">' + (nota ? '<div class="nota-info">' + nota + '</div>' : '') +
+        '<input type="text" id="txt-libre-' + pasoIdx + '" placeholder="Texto del botón (máx ' + limit + ' caracteres)..." maxlength="' + limit + '" oninput="document.getElementById(\'char-nuevo-'+pasoIdx+'\').textContent=this.value.length+\'/' + limit + '\'">' +
+        '<div class="char-count" id="char-nuevo-' + pasoIdx + '">0/' + limit + '</div>' +
+        '<div style="margin-top:8px;display:flex;gap:8px;">' +
+        '<button class="btn btn-sm btn-success" onclick="confirmarLibre(' + pasoIdx + ')">Agregar</button>' +
+        '<button class="btn btn-sm" onclick="cerrarAgregar()">Cancelar</button></div></div>';
+    }
+
+    function renderSeguimientos(paso, pasoIdx, estadoOpts) {
+      var segs = paso.seguimientos || [];
+      if (!segs.length) return '<p style="font-size:12px;color:#999;">Sin seguimientos configurados</p>';
+      return '<div class="seg-list">' + segs.map(function(seg, i) {
+        var msgTexto = resolverTexto(seg.mensaje_clave) || seg.mensaje_clave || '';
+        return '<div class="seg-item">' +
+          '<div class="seg-header">' +
+            '<div style="width:100px;"><div class="opcion-label">⏱ Si no responde en</div><input type="text" value="' + esc(seg.tiempo||'') + '" placeholder="30min, 2h, 18h" onchange="updateSeg(' + pasoIdx + ',' + i + ',\'tiempo\',this.value)"></div>' +
+            '<div style="width:120px;"><div class="opcion-label">📎 Media (opcional)</div>' + renderMediaSelectorInline(seg.media_clave, pasoIdx, i) + '</div>' +
+            '<div style="width:160px;"><div class="opcion-label">➡️ Cambiar estado a</div><select onchange="updateSeg(' + pasoIdx + ',' + i + ',\'estado_destino\',this.value)"><option value="">(No cambia)</option>' +
+              estadoOpts.replace('value="'+(seg.estado_destino||'')+'"','value="'+(seg.estado_destino||'')+'" selected') + '</select></div>' +
+            '<button class="btn-rm" onclick="rmSeg(' + pasoIdx + ',' + i + ')" title="Eliminar seguimiento">✕</button>' +
+          '</div>' +
+          '<div><div class="opcion-label">💬 Mensaje que se envía</div>' +
+            '<textarea onchange="updateSeg(' + pasoIdx + ',' + i + ',\'mensaje_clave\',this.value)" placeholder="Escribe el mensaje que recibirá el cliente...">' + esc(msgTexto) + '</textarea>' +
+            '<div class="hint">Variables: <code>{{link}}</code> <code>{{provider}}</code> <code>{{curso}}</code> <code>{{tecnologia}}</code></div></div>' +
+        '</div>';
+      }).join('') + '</div>';
+    }
+
+    // ── Acciones ──
+    function togglePaso(idx) { openPasoIdx = (openPasoIdx===idx) ? -1 : idx; mostrandoAgregarEn = -1; renderFlujo(); }
+    function irAAgendamiento(){ if (typeof navegar === 'function') navegar('agendamiento'); }
+    function updateField(idx, f, v) { flujo[idx][f] = v; }
+    function updateOpcion(pi, oi, f, v) { flujo[pi].opciones[oi][f] = v; }
+    function updateSeg(pi, si, f, v) { flujo[pi].seguimientos[si][f] = v; }
+    function updateOpcionTitulo(pi, oi, txt) { flujo[pi].opciones[oi].titulo = txt; flujo[pi].opciones[oi].id = generarId(txt, 'btn'); openPasoIdx = pi; renderFlujo(); }
+    function toggleVisibilidad(pi, oi) { flujo[pi].opciones[oi].visible = flujo[pi].opciones[oi].visible === false ? true : false; openPasoIdx = pi; renderFlujo(); }
+    function rmOpcion(pi, oi) { flujo[pi].opciones.splice(oi,1); eliminaciones++; openPasoIdx = pi; renderFlujo(); }
+    function mostrarAgregar(pi) { mostrandoAgregarEn = pi; openPasoIdx = pi; renderFlujo(); }
+    function cerrarAgregar() { mostrandoAgregarEn = -1; renderFlujo(); }
+
+    function confirmarLibre(pi) {
+      var inp = document.getElementById('txt-libre-' + pi); var txt = inp ? inp.value.trim() : '';
+      if (!txt) { toast('Escribe un texto', true); return; }
+      var limit = maxChars(flujo[pi]);
+      if (txt.length > limit) { toast('Máximo ' + limit + ' caracteres para WhatsApp', true); return; }
+      if (!flujo[pi].opciones) flujo[pi].opciones = [];
+      flujo[pi].opciones.push({ id: generarId(txt, 'btn'), titulo: txt, siguiente: '', visible: true, _esLibre: true });
+      mostrandoAgregarEn = -1; openPasoIdx = pi; renderFlujo();
+    }
+
+    function agregarSeguimiento(pi) { if (!flujo[pi].seguimientos) flujo[pi].seguimientos = []; flujo[pi].seguimientos.push({tiempo:'',mensaje_clave:'',media_clave:'',estado_destino:''}); openPasoIdx = pi; renderFlujo(); }
+    function rmSeg(pi, si) { flujo[pi].seguimientos.splice(si,1); eliminaciones++; openPasoIdx = pi; renderFlujo(); }
+
+    function agregarPaso() {
+      var id = 'PASO_' + Date.now().toString(36).toUpperCase();
+      flujo.push({estado: id, nombre_amigable: '', tipo_mensaje:'button', mensaje:'', media_clave:'', rol:'normal', opciones:[], seguimientos:[], activo:true});
+      openPasoIdx = flujo.length-1; renderFlujo(); toast('Nuevo paso agregado. Define un nombre amigable.');
+    }
+
+    function eliminarPaso(idx) {
+      var estado = flujo[idx].estado;
+      // Verificar si otros pasos referencian este
+      var referencias = [];
+      flujo.forEach(function(p, i) {
+        if (i === idx) return;
+        (p.opciones || []).forEach(function(op) { if (op.siguiente === estado) referencias.push(nombreAmigable(p) + ' → opción "' + (op.titulo||op.id) + '"'); });
+        (p.seguimientos || []).forEach(function(seg) { if (seg.estado_destino === estado) referencias.push(nombreAmigable(p) + ' → seguimiento'); });
+      });
+      if (referencias.length) {
+        var msg = '⚠️ Este paso está referenciado por:\n\n' + referencias.join('\n') + '\n\nSi lo eliminas, esas referencias quedarán sin destino. ¿Continuar?';
+        if (!confirm(msg)) return;
+      } else {
+        if (!confirm('¿Eliminar "' + nombreAmigable(flujo[idx]) + '"?')) return;
+      }
+      flujo.splice(idx,1); eliminaciones++; openPasoIdx=-1; renderFlujo(); toast('Paso eliminado');
+    }
+
+    function moverPaso(idx, dir) { var n=idx+dir; if(n<0||n>=flujo.length) return; var t=flujo[idx]; flujo[idx]=flujo[n]; flujo[n]=t; openPasoIdx=n; renderFlujo(); }
+
+    // ── Guardar con validaciones ──
+    function guardarFlujo() {
+      var errores = validarFlujo();
+      if (errores.length) {
+        toast('❌ ' + errores.join('\n❌ '), true);
+        return;
+      }
+      // Confirmación si hubo eliminaciones
+      if (eliminaciones > 0) {
+        if (!confirm('⚠️ Se realizaron ' + eliminaciones + ' eliminación(es) en esta sesión. ¿Guardar los cambios?')) return;
+      }
+      // Indicador visual
+      var btn = event ? event.target : null;
+      if (btn) { btn.textContent = 'Guardando...'; btn.disabled = true; }
+      google.script.run.withSuccessHandler(function(r) {
+        if (btn) { btn.textContent = 'Guardar todo'; btn.disabled = false; }
+        if(r.success) { toast('✅ Flujo guardado correctamente'); eliminaciones = 0; }
+        else toast('Error: '+(r.error||''),true);
+      }).guardarFlujoCompleto(flujo);
+    }
+
+    function validarFlujo() {
+      var errores = [];
+      var estadosExistentes = flujo.map(function(p) { return p.estado; });
+
+      flujo.forEach(function(paso, idx) {
+        if (!paso.activo && paso.activo !== undefined) return; // no validar inactivos
+        var nombre = nombreAmigable(paso);
+
+        // j) Mensaje obligatorio si hay botones/lista.
+        //    Excepción: los pasos con rol "agenda" no lo requieren (envían el Flow;
+        //    el mensaje del paso es opcional y el texto va en el body del Flow).
+        if (paso.tipo_mensaje !== 'text' && paso.rol !== 'agenda') {
+          var msg = resolverTexto(paso.mensaje);
+          if (!msg || !msg.trim()) {
+            errores.push('Paso "' + nombre + '": El mensaje es obligatorio cuando hay botones o lista.');
+          }
+        }
+
+        // k) "Lleva a" obligatorio en opciones visibles
+        var opcionesVisibles = (paso.opciones || []).filter(function(op) { return op.visible !== false; });
+        opcionesVisibles.forEach(function(op) {
+          if (!op.siguiente) {
+            errores.push('Paso "' + nombre + '": La opción "' + (op.titulo||op.id) + '" no tiene destino (Lleva a).');
+          }
+        });
+
+        // l) Verificar que pasos referenciados existan
+        (paso.opciones || []).forEach(function(op) {
+          if (op.siguiente && !estadosExistentes.includes(op.siguiente)) {
+            errores.push('Paso "' + nombre + '": La opción "' + (op.titulo||op.id) + '" apunta a "' + op.siguiente + '" que no existe.');
+          }
+        });
+        (paso.seguimientos || []).forEach(function(seg) {
+          if (seg.estado_destino && !estadosExistentes.includes(seg.estado_destino)) {
+            errores.push('Paso "' + nombre + '": Un seguimiento apunta a "' + seg.estado_destino + '" que no existe.');
+          }
+        });
+
+        // m) Validar caracteres en títulos según tipo
+        var charLimit = paso.tipo_mensaje === 'list' ? 24 : 20;
+        (paso.opciones || []).filter(function(op) { return op.visible !== false; }).forEach(function(op) {
+          if ((op.titulo || '').length > charLimit) {
+            errores.push('Paso "' + nombre + '": La opción "' + op.titulo + '" excede ' + charLimit + ' caracteres (límite para ' + (paso.tipo_mensaje === 'list' ? 'listas' : 'botones') + ').');
+          }
+        });
+
+        // c) Máx 3 botones
+        if (paso.tipo_mensaje === 'button') {
+          var totalVis = opcionesVisibles.length;
+          if (detectarFuente(paso) !== 'libre') {
+            var catalogo = getTodasOpcionesCatalogo(paso, idx);
+            var guardadas = {};
+            (paso.opciones || []).forEach(function(op) { guardadas[op.id] = op; });
+            totalVis = catalogo.filter(function(c) { var g = guardadas[c.id]; return !g || g.visible !== false; }).length;
+            totalVis += (paso.opciones || []).filter(function(op) { return op._esLibre && op.visible !== false; }).length;
+          }
+          if (totalVis > 3) {
+            errores.push('Paso "' + nombre + '": Tiene ' + totalVis + ' botones visibles (máximo 3 para WhatsApp).');
+          }
+        }
+      });
+
+      return errores;
+    }
+
+    function esc(s) { if(!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+    function toast(m,e) { var el=document.getElementById('toast'); el.textContent=m; el.className='toast'+(e?' error':''); el.style.display='block'; setTimeout(function(){el.style.display='none';},8000); }
+    // ── Media helpers ──
+    function getDriveIdLocal(clave) {
+      if (!clave) return '';
+      var imgs = opcionesDinamicas['_imagenes'] || [];
+      var found = imgs.find(function(i) { return i.clave === clave; });
+      return found ? found.driveId : '';
+    }
+
+    function renderMediaSelector(currentValue, pasoIdx, field) {
+      var imgs = opcionesDinamicas['_imagenes'] || [];
+      var driveId = getDriveIdLocal(currentValue);
+      var thumbHtml = driveId ? '<img src="https://drive.google.com/thumbnail?id=' + driveId + '&sz=w120" style="max-width:120px;border-radius:6px;margin-top:6px;display:block;">' : '';
+
+      var optionsHtml = '<option value="">Sin media</option>';
+      imgs.forEach(function(img) {
+        var selected = img.clave === currentValue ? ' selected' : '';
+        optionsHtml += '<option value="' + esc(img.clave) + '"' + selected + '>' + img.clave + '</option>';
+      });
+
+      return '<select onchange="updateField(' + pasoIdx + ',\'' + field + '\',this.value);openPasoIdx=' + pasoIdx + ';renderFlujo();" style="font-size:12px;">' + optionsHtml + '</select>' + thumbHtml;
+    }
+
+    function renderMediaSelectorInline(currentValue, pasoIdx, segIdx) {
+      var imgs = opcionesDinamicas['_imagenes'] || [];
+      var driveId = getDriveIdLocal(currentValue);
+      var thumbHtml = driveId ? '<img src="https://drive.google.com/thumbnail?id=' + driveId + '&sz=w60" style="max-width:60px;border-radius:4px;margin-top:4px;display:block;">' : '';
+
+      var optionsHtml = '<option value="">Ninguna</option>';
+      imgs.forEach(function(img) {
+        var selected = img.clave === currentValue ? ' selected' : '';
+        optionsHtml += '<option value="' + esc(img.clave) + '"' + selected + '>' + img.clave + '</option>';
+      });
+
+      return '<select onchange="updateSeg(' + pasoIdx + ',' + segIdx + ',\'media_clave\',this.value);openPasoIdx=' + pasoIdx + ';renderFlujo();" style="font-size:11px;width:100%;">' + optionsHtml + '</select>' + thumbHtml;
+    }
+
+    // ── Disparadores (mensajes del sistema) ──
+    var disparadores = [];
+
+    function renderDisparadores() {
+      var container = document.getElementById('disparadores-container');
+      if (!disparadores.length) {
+        container.innerHTML = '<p style="color:#999;font-size:13px;">No hay disparadores configurados.</p>';
+      } else {
+        container.innerHTML = disparadores.map(function(d, idx) {
+          var inactivo = !d.activo;
+          // Cuando esta desactivado: toda la tarjeta en gris (grayscale + opacidad)
+          var cardStyle = inactivo
+            ? 'filter:grayscale(1);opacity:0.55;border-left-color:#9aa3b2;'
+            : 'border-left-color:#2c5cc5;';
+          var driveId = getDriveIdLocal(d.media);
+          var mediaHtml = '';
+          if (d.media && driveId) {
+            mediaHtml = '<img src="https://drive.google.com/thumbnail?id=' + driveId + '&sz=w120" style="max-width:120px;border-radius:6px;border:1px solid #ddd;margin-top:6px;">';
+          } else if (d.media) {
+            mediaHtml = '<div style="font-size:11px;color:#999;margin-top:4px;">📎 ' + d.media + '</div>';
+          }
+
+          return '<div style="margin-bottom:16px;padding:14px;background:#f8f9fb;border-radius:8px;border-left:3px solid #2c5cc5;transition:filter .2s ease,opacity .2s ease;' + cardStyle + '">' +
+            '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:10px;">' +
+              '<input type="text" value="' + esc(d.label) + '" placeholder="Nombre (ej: Precios, Horarios)" style="font-size:14px;font-weight:600;border:none;background:transparent;flex:1;" onchange="disparadores[' + idx + '].label=this.value">' +
+              '<div style="display:flex;gap:10px;align-items:center;">' +
+                '<label class="disp-switch" title="' + (d.activo ? 'Desactivar' : 'Activar') + '">' +
+                  '<input type="checkbox" ' + (d.activo ? 'checked' : '') + ' onchange="toggleDisparador(' + idx + ')">' +
+                  '<span class="disp-slider"></span>' +
+                '</label>' +
+                '<span style="font-size:11px;font-weight:600;color:' + (inactivo ? '#9aa3b2' : '#27ae60') + ';min-width:70px;">' + (inactivo ? 'Desactivado' : 'Activo') + '</span>' +
+                '<button onclick="eliminarDisparador(' + idx + ')" style="background:none;border:none;font-size:16px;cursor:pointer;color:#e74c3c;" title="Eliminar">✕</button>' +
+              '</div>' +
+            '</div>' +
+            '<div style="margin-bottom:8px;">' +
+              '<div style="font-size:11px;color:#888;margin-bottom:3px;">Palabras clave (separadas por coma)</div>' +
+              '<input type="text" value="' + esc(d.palabras_clave) + '" placeholder="precio, costo, cuanto cuesta, valor..." style="width:100%;padding:6px 10px;border:1px solid #ddd;border-radius:6px;font-size:12px;" onchange="disparadores[' + idx + '].palabras_clave=this.value">' +
+            '</div>' +
+            '<div style="margin-bottom:8px;">' +
+              '<div style="font-size:11px;color:#888;margin-bottom:3px;">Respuesta del bot</div>' +
+              '<textarea style="width:100%;min-height:50px;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit;resize:vertical;" onchange="disparadores[' + idx + '].texto=this.value">' + esc(d.texto) + '</textarea>' +
+              '<div style="font-size:10px;color:#999;margin-top:2px;">Variables: {{link}} {{provider}} {{curso}}</div>' +
+            '</div>' +
+            '<div style="margin-bottom:4px;">' +
+              '<div style="font-size:11px;color:#888;margin-bottom:3px;">Media (clave de IMAGENES_FLUJO, opcional)</div>' +
+              '<input type="text" value="' + esc(d.media) + '" placeholder="Ej: MSG_IMAGEN_PRECIO_1" style="width:100%;padding:6px 10px;border:1px solid #ddd;border-radius:6px;font-size:12px;" onchange="disparadores[' + idx + '].media=this.value">' +
+              mediaHtml +
+            '</div>' +
+          '</div>';
+        }).join('');
+      }
+    }
+
+    function toggleDisparador(idx) { disparadores[idx].activo = !disparadores[idx].activo; renderDisparadores(); }
+    function eliminarDisparador(idx) {
+      if (!confirm('¿Eliminar disparador "' + (disparadores[idx].label || disparadores[idx].clave) + '"?')) return;
+      disparadores.splice(idx, 1); renderDisparadores();
+    }
+    function agregarDisparador() {
+      var num = disparadores.length + 1;
+      disparadores.push({ clave: 'DISP_NUEVO_' + Date.now(), texto: '', palabras_clave: '', media: '', activo: true, label: 'Nuevo disparador ' + num });
+      renderDisparadores();
+    }
+
+    function guardarDisparadores() {
+      var btn = event ? event.target : null;
+      if (btn) { btn.textContent = 'Guardando...'; btn.disabled = true; }
+      // Generar claves automáticas para los que no tienen
+      disparadores.forEach(function(d) {
+        if (!d.clave || d.clave.startsWith('DISP_NUEVO_')) {
+          d.clave = 'DISP_' + (d.label || 'SIN_NOMBRE').toUpperCase().replace(/[^\w]/g, '_').substring(0, 20);
+        }
+      });
+      google.script.run.withSuccessHandler(function(r) {
+        if (btn) { btn.textContent = 'Guardar disparadores'; btn.disabled = false; }
+        if (r.success) toast('✅ Disparadores guardados');
+        else toast('Error: ' + (r.error||''), true);
+      }).guardarDisparadores(disparadores);
+    }
+
+    cargarFlujo();
+  </script>
+</body>
+</html>

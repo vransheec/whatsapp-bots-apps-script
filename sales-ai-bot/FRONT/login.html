@@ -1,0 +1,50 @@
+<!DOCTYPE html><html><head><base target="_top">
+<?!= include('styles') ?>
+</head><body data-page="login">
+<div class="auth-shell" style="min-height:100vh;">
+  <div class="auth-box">
+    <div class="mark"><img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'></svg>" alt="Cloud Academy"></div>
+    <h1>Cloud Academy Bot</h1>
+    <p class="subtitle">Panel de Administración</p>
+    <div class="spinner" id="loginSpinner"></div>
+    <p id="loginMsg" style="font-size:13px; color:var(--ink-500); margin-top:16px;">Verificando tu sesión…</p>
+    <p class="note">Solo cuentas @example.com y usuarios autorizados</p>
+  </div>
+</div>
+<script>
+(function(){
+  "use strict";
+  var USE_MOCK = !(window.google && window.google.script && window.google.script.run);
+  function escHtml(str){ var d=document.createElement('div'); d.textContent=(str===null||str===undefined)?'':String(str); return d.innerHTML; }
+
+  function callServer(fn,args,onOk,onErr){
+    if (USE_MOCK){
+      setTimeout(function(){
+        if (fn==='obtenerUsuarioActual') onOk({ success:true, email:'advisor@example.com', rol:'asesor', nombre:'Asesor Demo' });
+        else if (fn==='getBaseUrl') onOk('#');
+      }, 400);
+      return;
+    }
+    var r = google.script.run.withSuccessHandler(onOk).withFailureHandler(onErr);
+    r[fn].apply(r,args||[]);
+  }
+
+  callServer('obtenerUsuarioActual', [], function(res){
+    var msgEl = document.getElementById('loginMsg');
+    if (res && res.success){
+      try{ window.name = res.nombre || res.email || ''; }catch(e){}
+      msgEl.textContent = 'Bienvenido, ' + (res.nombre || res.email) + '. Redirigiendo…';
+      callServer('getBaseUrl', [], function(base){
+        window.top.location.href = base + '?page=dashboard';
+      });
+    } else {
+      document.getElementById('loginSpinner').style.display = 'none';
+      msgEl.innerHTML = '<span style="color:var(--st-red); font-weight:700;">' + escHtml((res && res.error) || 'No se pudo verificar tu sesión.') + '</span>';
+    }
+  }, function(err){
+    document.getElementById('loginSpinner').style.display = 'none';
+    document.getElementById('loginMsg').innerHTML = '<span style="color:var(--st-red); font-weight:700;">' + escHtml((err && err.message) || 'Error al conectar con el servidor.') + '</span>';
+  });
+})();
+</script>
+</body></html>

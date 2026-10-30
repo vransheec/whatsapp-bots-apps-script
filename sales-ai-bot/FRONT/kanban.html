@@ -1,0 +1,377 @@
+<!DOCTYPE html><html><head><base target="_top">
+<?!= include('styles') ?>
+<style>
+  .kb-filters{display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; margin-bottom:14px;}
+  .kb-toggles{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px; align-items:center;}
+  .kb-toggle{display:inline-flex; align-items:center; gap:4px; font-size:11px; cursor:pointer; padding:3px 9px;
+    background:var(--ink-100); border-radius:var(--r-pill); user-select:none;}
+  .kb-toggle input{margin:0;}
+  .kb-board{display:flex; gap:12px; overflow-x:auto; padding:6px 0 14px; min-height:62vh;}
+  .kb-col{min-width:230px; max-width:250px; background:var(--ink-50); border:1px solid var(--ink-100);
+    border-radius:12px; padding:10px; flex-shrink:0;}
+  .kb-col.hidden-col{display:none;}
+  .kb-col.drag-over{background:var(--steel-50); outline:2px dashed var(--steel);}
+  .kb-col--agenda{background:#eef4ff; border-color:#c7d9ff;}
+  .kb-col--agenda .kb-card{border-left-color:#2E86DE;}
+  .kb-agenda-note{font-size:10px; color:var(--ink-400); text-align:center; margin:-4px 0 8px;}
+  .kb-resultado{font-size:10px; font-weight:800; padding:2px 7px; border-radius:999px; display:inline-block; margin-top:5px;}
+  .kb-resultado--pend{background:#fef3c7; color:#b45309; border:1px solid #fcd34d;}
+  .kb-col__head{font-weight:800; font-size:12.5px; padding:7px 10px; border-radius:8px; color:#fff;
+    text-align:center; margin-bottom:10px; display:flex; justify-content:center; align-items:center; gap:6px;}
+  .kb-count{background:rgba(255,255,255,.85); color:#333; padding:1px 7px; border-radius:10px; font-size:11px; font-weight:800;}
+  .kb-cards{min-height:40px;}
+  .kb-card{background:#fff; border-radius:10px; padding:10px; margin-bottom:8px; box-shadow:0 1px 3px rgba(0,0,0,.08);
+    cursor:grab; font-size:12px; border-left:3px solid var(--steel); transition:transform .1s, box-shadow .1s;}
+  .kb-card:hover{transform:translateY(-1px); box-shadow:0 3px 10px rgba(0,0,0,.12);}
+  .kb-card:active{cursor:grabbing;}
+  .kb-card__top{display:flex; justify-content:space-between; align-items:center; gap:6px;}
+  .kb-tel{font-weight:800; color:var(--ink-900); font-size:12.5px; cursor:copy;}
+  .kb-curso{color:#059669; font-weight:700; margin-top:3px;}
+  .kb-asesor{color:#7c3aed; font-size:11px; margin-top:2px;}
+  .kb-fecha{color:var(--ink-400); font-size:10.5px; margin-top:2px;}
+  .kb-estado{background:#e0f2fe; color:#0369a1; padding:1px 6px; border-radius:4px; font-size:10px; display:inline-block; margin-top:5px;}
+  .kb-pauta{font-size:10px; font-weight:700; padding:1px 7px; border-radius:999px; display:inline-block; margin-top:5px;}
+  .kb-contacto{padding:2px 7px; border-radius:4px; font-size:10px; border:none; cursor:pointer; font-weight:700;}
+  .kb-contacto.no{background:#fee2e2; color:#dc2626;}
+  .kb-contacto.si{background:#dcfce7; color:#16a34a;}
+  .kb-modal{display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:1000; align-items:center; justify-content:center;}
+  .kb-modal__box{background:#fff; border-radius:12px; padding:20px; max-width:440px; width:90%; max-height:80vh; overflow-y:auto;}
+  .kb-modal__box h3{margin:0 0 12px; color:var(--ink-900);}
+  .kb-field{margin:8px 0;}
+  .kb-field label{font-weight:700; font-size:11.5px; color:var(--ink-500); display:block;}
+  .kb-field p{margin:2px 0; font-size:13px;}
+</style>
+</head><body data-page="kanban">
+<?!= include('nav') ?>
+<div class="page container">
+  <div class="page-header">
+    <div>
+      <h1>Pipeline (Kanban)</h1>
+      <p class="subtitle">Arrastra cada lead por las etapas. Las columnas se generan desde el flujo y las etapas de venta.</p>
+    </div>
+    <div class="actions">
+      <button class="btn btn-secondary btn-sm" id="kbRefresh">↻ Actualizar</button>
+    </div>
+  </div>
+
+  <div class="kb-filters">
+    <div class="field" style="min-width:200px;">
+      <label class="field-label">Buscar número</label>
+      <input class="input" type="text" id="kb-buscar" placeholder="Ej: 51987..." autocomplete="off">
+    </div>
+    <div class="field">
+      <label class="field-label">Tecnología</label>
+      <select class="select" id="kb-tech"><option value="">Todas</option></select>
+    </div>
+    <div class="field">
+      <label class="field-label">Nube / Provider</label>
+      <select class="select" id="kb-prov"><option value="">Todos</option></select>
+    </div>
+    <div class="field">
+      <label class="field-label">Curso</label>
+      <select class="select" id="kb-curso"><option value="">Todos</option></select>
+    </div>
+    <div class="field">
+      <label class="field-label">Periodo</label>
+      <select class="select" id="kb-periodo">
+        <option value="todos">Todos</option>
+        <option value="hoy">Hoy</option>
+        <option value="ayer">Ayer</option>
+        <option value="7">Últimos 7 días</option>
+        <option value="30">Últimos 30 días</option>
+      </select>
+    </div>
+    <div class="field">
+      <label class="field-label">Asesor</label>
+      <select class="select" id="kb-asesor"><option value="">Todos</option></select>
+    </div>
+    <button class="btn btn-secondary btn-sm" id="kb-limpiar" style="align-self:flex-end;">Limpiar</button>
+    <span id="kb-total" style="font-size:12.5px; color:var(--ink-500); align-self:center;"></span>
+  </div>
+
+  <div class="kb-toggles" id="kbToggles"></div>
+  <div class="kb-board" id="kbBoard"><p style="padding:20px; color:var(--ink-500);">Cargando leads…</p></div>
+</div>
+
+<div class="kb-modal" id="kbModal" onclick="if(event.target===this)this.style.display='none'">
+  <div class="kb-modal__box" id="kbModalBox"></div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var columnas = [];      // config del kanban (del servidor)
+  var leads = [];         // leads cargados
+  var colBot = {};        // mapa estadoBot -> columna (para fallback)
+  var movidos = {};       // filas movidas manualmente en esta sesión (no re-sincronizar visualmente)
+  var ocultas = {};       // columnas ocultas (por id)
+  var pautaColor = {};    // id pauta -> color (para badge)
+  var pautaLabel = {};
+  var AGENDA_COL = { id:'__AGENDAMIENTOS__', label:'📅 Agendamientos', color:'#2E86DE' }; // vista especial (no es etapa real)
+
+  function colDeLead(l){
+    // Si el lead tiene etapa kanban válida, usarla; si no, caer en la columna de su estadoBot.
+    if (l.kanban && columnas.some(function(c){ return c.id === l.kanban; })) return l.kanban;
+    // La columna del estado del flujo coincide por id con el estado del bot
+    if (columnas.some(function(c){ return c.id === l.estadoBot; })) return l.estadoBot;
+    return columnas.length ? columnas[0].id : '';
+  }
+
+  function cargar(){
+    document.getElementById('kbBoard').innerHTML = '<p style="padding:20px;color:var(--ink-500);">Cargando…</p>';
+    // Config de columnas + leads + pautas (para colores del badge)
+    ABC.callServer('getKanbanConfig', [], function(cfg){
+      columnas = cfg || [];
+      // Por defecto solo se muestran: Agendamientos + las etapas manuales de venta
+      // (Asistió / No asistió / Convertido). Los estados del flujo arrancan ocultos,
+      // pero quedan disponibles con los toggles de arriba.
+      var VISIBLES_DEFAULT = { 'ASISTIO': true, 'NO_ASISTIO': true, 'CONVERTIDO': true };
+      columnas.forEach(function(c){ if (ocultas[c.id] === undefined) ocultas[c.id] = !VISIBLES_DEFAULT[c.id]; });
+      if (ocultas[AGENDA_COL.id] === undefined) ocultas[AGENDA_COL.id] = false;
+      ABC.callServer('getPautasConfig', [], function(pc){
+        (pc||[]).forEach(function(p){ pautaColor[p.id] = p.color; pautaLabel[p.id] = p.label; });
+        ABC.callServer('getLeadsKanban', [], function(ls){
+          leads = ls || [];
+          poblarFiltros();
+          renderToggles();
+          render();
+        });
+      });
+    });
+  }
+
+  function fillSel(id, valores){
+    var sel = document.getElementById(id);
+    var cur = sel.value;
+    var primera = sel.querySelector('option').outerHTML; // conservar "Todos/Todas"
+    sel.innerHTML = primera + valores.map(function(v){
+      return '<option value="'+ABC.escAttr(v)+'">'+ABC.escHtml(v)+'</option>';
+    }).join('');
+    if (valores.indexOf(cur) !== -1) sel.value = cur;
+  }
+
+  function poblarFiltros(){
+    // Asesores
+    var asesores = {}; leads.forEach(function(l){ if (l.asesor) asesores[l.asesor]=true; });
+    fillSel('kb-asesor', Object.keys(asesores).sort());
+    // Tecnologías
+    var techs = {}; leads.forEach(function(l){ if (l.tecnologia) techs[l.tecnologia]=true; });
+    fillSel('kb-tech', Object.keys(techs).sort());
+    poblarProviderYCurso();
+  }
+
+  // Provider y Curso dependen de la tecnología elegida (filtros encadenados).
+  function poblarProviderYCurso(){
+    var techSel = document.getElementById('kb-tech').value;
+    var provs = {}, cursos = {};
+    leads.forEach(function(l){
+      if (techSel && l.tecnologia !== techSel) return;
+      if (l.provider) provs[l.provider] = true;
+      if (l.curso) cursos[l.curso] = true;
+    });
+    fillSel('kb-prov', Object.keys(provs).sort());
+    fillSel('kb-curso', Object.keys(cursos).sort());
+  }
+
+  function renderToggles(){
+    var html = '<span style="font-size:11.5px;font-weight:700;color:var(--ink-500);">Columnas:</span>';
+    // Toggle de la vista especial Agendamientos (primero)
+    html += '<label class="kb-toggle" style="background:#eef4ff;"><input type="checkbox" '+(ocultas[AGENDA_COL.id]?'':'checked')+
+      ' onchange="kbToggleCol(\''+AGENDA_COL.id+'\',this.checked)">'+ABC.escHtml(AGENDA_COL.label)+'</label>';
+    columnas.forEach(function(c){
+      html += '<label class="kb-toggle"><input type="checkbox" '+(ocultas[c.id]?'':'checked')+
+        ' onchange="kbToggleCol(\''+c.id+'\',this.checked)">'+ABC.escHtml(c.label)+'</label>';
+    });
+    document.getElementById('kbToggles').innerHTML = html;
+  }
+  window.kbToggleCol = function(id, visible){ ocultas[id] = !visible; render(); };
+
+  function leadsFiltrados(){
+    var periodo = document.getElementById('kb-periodo').value;
+    var asesor = document.getElementById('kb-asesor').value;
+    var tech = document.getElementById('kb-tech').value;
+    var prov = document.getElementById('kb-prov').value;
+    var curso = document.getElementById('kb-curso').value;
+    var q = (document.getElementById('kb-buscar').value || '').replace(/\D/g,'');
+    var ahora = new Date();
+    var hoy0 = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate()).getTime();
+    return leads.filter(function(l){
+      if (q && l.telefono.indexOf(q) === -1) return false;
+      if (tech && (l.tecnologia||'') !== tech) return false;
+      if (prov && (l.provider||'') !== prov) return false;
+      if (curso && (l.curso||'') !== curso) return false;
+      if (asesor && (l.asesor||'') !== asesor) return false;
+      if (periodo !== 'todos'){
+        var t = l.timestamp || 0;
+        if (periodo === 'hoy'){ if (t < hoy0) return false; }
+        else if (periodo === 'ayer'){ var ayer0 = hoy0 - 86400000; if (t < ayer0 || t >= hoy0) return false; }
+        else { var dias = parseInt(periodo,10); if (t < hoy0 - (dias-1)*86400000) return false; }
+      }
+      return true;
+    });
+  }
+
+  // Resultado de la cita de un lead (según su etapa manual). Devuelve null si aún no se marcó.
+  var RESULTADO_CITA = {
+    'ASISTIO':    { label:'✅ Asistió',   color:'#16a34a' },
+    'NO_ASISTIO': { label:'❌ No asistió', color:'#dc2626' },
+    'CONVERTIDO': { label:'🎉 Convertido', color:'#059669' }
+  };
+
+  // HTML de una tarjeta.
+  //  draggable: si la tarjeta se puede arrastrar.
+  //  enAgenda: si se renderiza en la columna Agendamientos (muestra el resultado de la cita).
+  function cardHtml(l, borderColor, draggable, enAgenda){
+    var cc = l.contactado ? 'si' : 'no';
+    var ct = l.contactado ? 'CONTACTADO' : 'NO CONTACTO';
+    var h = '<div class="kb-card"'+(draggable?' draggable="true" ondragstart="kbDrag(event,'+l.fila+')"':'')+
+            ' onclick="kbDetalle('+l.fila+')" style="border-left-color:'+borderColor+';">';
+    h += '<div class="kb-card__top"><span class="kb-tel" onclick="event.stopPropagation();kbCopiar(\''+l.telefono+'\',this)" title="Copiar">📱 '+ABC.escHtml(l.telefono)+'</span>';
+    h += '<button class="kb-contacto '+cc+'" onclick="event.stopPropagation();kbContacto('+l.fila+',this)">'+ct+'</button></div>';
+    if (l.curso) h += '<div class="kb-curso">'+(l.provider?ABC.escHtml(l.provider)+' ':'')+ABC.escHtml(l.curso)+'</div>';
+    if (l.asesor) h += '<div class="kb-asesor">👤 '+ABC.escHtml(l.asesor)+'</div>';
+    h += '<div class="kb-fecha">'+ (l.timestamp? ABC.fmtTime(l.timestamp):'') +'</div>';
+    // En la vista Agendamientos: badge con el resultado de la cita (o "pendiente").
+    if (enAgenda){
+      var r = RESULTADO_CITA[l.kanban];
+      if (r) h += '<span class="kb-resultado" style="background:'+r.color+'1a;color:'+r.color+';border:1px solid '+r.color+'55;">'+r.label+'</span> ';
+      else   h += '<span class="kb-resultado kb-resultado--pend">⏳ Pendiente de marcar</span> ';
+    }
+    if (l.estadoBot) h += '<span class="kb-estado">'+ABC.escHtml(l.estadoBot)+'</span> ';
+    if (l.pautaId){
+      var pcol = pautaColor[l.pautaId] || '#2E86DE';
+      h += '<span class="kb-pauta" style="background:'+pcol+'22;color:'+pcol+';border:1px solid '+pcol+'55;">📣 '+ABC.escHtml(pautaLabel[l.pautaId]||l.pautaId)+'</span>';
+    }
+    h += '</div>';
+    return h;
+  }
+
+  function render(){
+    var ls = leadsFiltrados();
+    document.getElementById('kb-total').textContent = ls.length + ' leads' + (ls.length !== leads.length ? ' (de ' + leads.length + ')' : '');
+    var html = '';
+
+    // Columna especial "Agendamientos": todos los que agendaron o pasaron por confirmo meet,
+    // sin importar en qué etapa estén ahora. Las tarjetas se pueden arrastrar a
+    // Asistió / No asistió / Convertido para marcar el resultado desde aquí mismo.
+    if (!ocultas[AGENDA_COL.id]){
+      var enAgenda = ls.filter(function(l){ return l.agendo === true; })
+                       .sort(function(a,b){ return b.timestamp - a.timestamp; });
+      html += '<div class="kb-col kb-col--agenda">';
+      html += '<div class="kb-col__head" style="background:'+AGENDA_COL.color+'">'+ABC.escHtml(AGENDA_COL.label)+'<span class="kb-count">'+enAgenda.length+'</span></div>';
+      html += '<div class="kb-agenda-note">Arrástralos a Asistió / No asistió / Convertido</div>';
+      html += '<div class="kb-cards">';
+      enAgenda.forEach(function(l){ html += cardHtml(l, AGENDA_COL.color, true, true); });
+      html += '</div></div>';
+    }
+
+    columnas.forEach(function(col){
+      var enCol = ls.filter(function(l){ return colDeLead(l) === col.id; })
+                    .sort(function(a,b){ return b.timestamp - a.timestamp; });
+      html += '<div class="kb-col'+(ocultas[col.id]?' hidden-col':'')+'" ondragover="event.preventDefault();this.classList.add(\'drag-over\')" ondragleave="this.classList.remove(\'drag-over\')" ondrop="kbDrop(event,\''+col.id+'\')">';
+      html += '<div class="kb-col__head" style="background:'+col.color+'">'+ABC.escHtml(col.label)+'<span class="kb-count">'+enCol.length+'</span></div>';
+      html += '<div class="kb-cards">';
+      enCol.forEach(function(l){ html += cardHtml(l, col.color, true); });
+      html += '</div></div>';
+    });
+    document.getElementById('kbBoard').innerHTML = html;
+  }
+
+  // ---------- Drag & drop ----------
+  var dragFila = null;
+  window.kbDrag = function(e, fila){ dragFila = fila; e.dataTransfer.setData('text/plain', fila); };
+  window.kbDrop = function(e, colId){
+    e.preventDefault(); e.currentTarget.classList.remove('drag-over');
+    if (dragFila == null) return;
+    var l = leads.find(function(x){ return x.fila === dragFila; });
+    if (l){
+      l.kanban = colId;
+      movidos[dragFila] = true;
+      // Al marcar un resultado de cita (asistió / no asistió / convertido), el asesor
+      // ya tuvo contacto: marcar contactado automáticamente. Además cuenta como
+      // agendamiento (el servidor crea la fila si no existía), así que lo reflejamos ya.
+      if (['ASISTIO','NO_ASISTIO','CONVERTIDO'].indexOf(colId) !== -1){
+        l.agendo = true;
+        if (!l.contactado){
+          l.contactado = true;
+          ABC.callServer('actualizarContactadoKanban', [dragFila, true], function(){});
+        }
+      }
+    }
+    render();
+    ABC.callServer('moverLeadKanban', [dragFila, colId], function(res){
+      if (!res || !res.success) ABC.toast('No se pudo guardar el movimiento','error');
+    });
+    dragFila = null;
+  };
+
+  window.kbContacto = function(fila, btn){
+    var l = leads.find(function(x){ return x.fila === fila; }); if (!l) return;
+    l.contactado = !l.contactado;
+    btn.textContent = l.contactado ? 'CONTACTADO' : 'NO CONTACTO';
+    btn.className = 'kb-contacto ' + (l.contactado ? 'si' : 'no');
+    ABC.callServer('actualizarContactadoKanban', [fila, l.contactado], function(){});
+  };
+
+  window.kbCopiar = function(tel, el){
+    navigator.clipboard.writeText(tel).then(function(){ var o=el.innerHTML; el.innerHTML='✅ Copiado'; setTimeout(function(){el.innerHTML=o;},1000); });
+  };
+
+  window.kbDetalle = function(fila){
+    var l = leads.find(function(x){ return x.fila === fila; }); if (!l) return;
+    var html = '<h3>📱 '+ABC.escHtml(l.telefono)+'</h3>';
+    html += '<div class="kb-field"><label>Provider / Curso</label><p>'+(ABC.escHtml(l.provider)||'-')+' / '+(ABC.escHtml(l.curso)||'-')+'</p></div>';
+    html += '<div class="kb-field"><label>Estado del bot</label><p>'+ABC.escHtml(l.estadoBot||'-')+'</p></div>';
+    html += '<div class="kb-field"><label>Etapa kanban</label><p>'+ABC.escHtml(l.kanban||'(según estado)')+'</p></div>';
+    if (l.pautaId) html += '<div class="kb-field"><label>Pauta</label><p>'+ABC.escHtml(pautaLabel[l.pautaId]||l.pautaId)+'</p></div>';
+    html += '<div class="kb-field"><label>Asesor asignado</label>'+
+      '<select id="kbAsesorSel" class="select" style="width:100%;margin-top:4px;">'+
+        '<option value="">Sin asignar</option>'+
+        asesoresOptions(l.asesor)+
+      '</select>'+
+      '<button class="btn btn-primary btn-sm" style="margin-top:8px;" onclick="kbGuardarAsesor('+fila+')">Guardar asesor</button></div>';
+    html += '<button class="btn btn-secondary btn-sm" style="margin-top:12px;" onclick="document.getElementById(\'kbModal\').style.display=\'none\'">Cerrar</button>';
+    document.getElementById('kbModalBox').innerHTML = html;
+    document.getElementById('kbModal').style.display = 'flex';
+  };
+
+  // Opciones de asesor (de los que ya existen + los que selecciones). Editable: puedes escribir en la hoja.
+  function asesoresOptions(sel){
+    var set = {};
+    leads.forEach(function(l){ if (l.asesor) set[l.asesor] = true; });
+    if (sel) set[sel] = true;
+    return Object.keys(set).sort().map(function(a){
+      return '<option value="'+ABC.escAttr(a)+'"'+(a===sel?' selected':'')+'>'+ABC.escHtml(a)+'</option>';
+    }).join('');
+  }
+
+  window.kbGuardarAsesor = function(fila){
+    var val = document.getElementById('kbAsesorSel').value;
+    ABC.callServer('actualizarAsesorKanban', [fila, val], function(res){
+      if (res && res.success){
+        var l = leads.find(function(x){ return x.fila === fila; }); if (l) l.asesor = val;
+        ABC.toast('Asesor actualizado'); document.getElementById('kbModal').style.display='none'; poblarFiltros(); render();
+      } else ABC.toast('No se pudo guardar','error');
+    });
+  };
+
+  document.getElementById('kb-periodo').addEventListener('change', render);
+  document.getElementById('kb-asesor').addEventListener('change', render);
+  document.getElementById('kb-prov').addEventListener('change', render);
+  document.getElementById('kb-curso').addEventListener('change', render);
+  // Al cambiar tecnología, repoblar provider/curso (encadenado) y re-render.
+  document.getElementById('kb-tech').addEventListener('change', function(){ poblarProviderYCurso(); render(); });
+  // Búsqueda por número con pequeño debounce.
+  document.getElementById('kb-buscar').addEventListener('input', ABC.debounce(function(){ render(); }, 150));
+  document.getElementById('kb-limpiar').addEventListener('click', function(){
+    document.getElementById('kb-buscar').value = '';
+    ['kb-tech','kb-prov','kb-curso','kb-asesor'].forEach(function(id){ document.getElementById(id).value=''; });
+    document.getElementById('kb-periodo').value = 'todos';
+    poblarProviderYCurso(); render();
+  });
+  document.getElementById('kbRefresh').addEventListener('click', cargar);
+
+  cargar();
+})();
+</script>
+</body></html>

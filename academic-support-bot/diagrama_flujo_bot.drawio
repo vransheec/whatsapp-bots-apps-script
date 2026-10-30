@@ -1,0 +1,273 @@
+<mxfile host="app.diagrams.net" modified="2026-07-03" version="21.0.0">
+  <diagram name="Cloud Academy Bot Flujo" id="cloud-academy-bot-flow">
+    <mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- TÍTULO -->
+        <mxCell id="title" value="Cloud Academy Academic Bot — Flujo Completo" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=20;fontStyle=1;fontColor=#1a237e;" vertex="1" parent="1">
+          <mxGeometry x="427" y="20" width="800" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- INICIO -->
+        <mxCell id="start" value="Alumno/Docente envía mensaje por WhatsApp" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="577" y="80" width="300" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- META API -->
+        <mxCell id="meta" value="Meta WhatsApp API recibe el mensaje y lo envía al webhook" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="577" y="180" width="300" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- DOPOST -->
+        <mxCell id="dopost" value="doPost() recibe el webhook&#xa;Extrae: phoneNumber, messageType, messageText" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="577" y="270" width="300" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- ES TEXTO? -->
+        <mxCell id="esTexto" value="¿Es mensaje de texto o botón interactivo?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="577" y="360" width="300" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- NO ES TEXTO -->
+        <mxCell id="noTexto" value="Responder: 'Solo proceso mensajes de texto'" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="940" y="375" width="220" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- ES RESET? -->
+        <mxCell id="esReset" value="¿Es comando RESET / REINICIAR?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="577" y="470" width="300" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- LIMPIAR SESION -->
+        <mxCell id="limpiarSesion" value="Limpiar sesión y mostrar bienvenida de nuevo" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="940" y="485" width="220" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- SESION ACTIVA? -->
+        <mxCell id="tieneSesion" value="¿Tiene sesión activa? (PropertiesService, &lt; 4 horas)" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="577" y="580" width="300" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- BIENVENIDA CON BOTONES -->
+        <mxCell id="bienvenida" value="Enviar mensaje de bienvenida con botones interactivos&#xa;&#xa;[🎓 Alumno]  [👨‍🏫 Docente]" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="200" y="595" width="280" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- ESPERA ROL -->
+        <mxCell id="esperaRol" value="Usuario toca botón Alumno o Docente&#xa;(o escribe alumno/docente)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="200" y="700" width="280" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- ROL? -->
+        <mxCell id="rolDecision" value="¿Qué rol eligió?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="577" y="690" width="300" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- BUSCAR EN CRM ALUMNO -->
+        <mxCell id="buscarAlumno" value="Buscar número en hoja ALUMNOS del CRM&#xa;(comparar últimos 9 dígitos del teléfono)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="300" y="820" width="280" height="55" as="geometry" />
+        </mxCell>
+
+        <!-- BUSCAR EN CRM DOCENTE -->
+        <mxCell id="buscarDocente" value="Buscar número en hoja DOCENTES del CRM&#xa;(comparar últimos 9 dígitos del teléfono)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="880" y="820" width="280" height="55" as="geometry" />
+        </mxCell>
+
+        <!-- ENCONTRADO ALUMNO? -->
+        <mxCell id="encontradoAlumno" value="¿Encontrado en CRM?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="315" y="920" width="250" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- ENCONTRADO DOCENTE? -->
+        <mxCell id="encontradoDocente" value="¿Encontrado en CRM?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="895" y="920" width="250" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- NO REGISTRADO -->
+        <mxCell id="noRegistrado" value="Enviar MENSAJE_NO_REGISTRADO&#xa;+ Email al área académica&#xa;+ Limpiar sesión" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="100" y="935" width="180" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- NO REGISTRADO DOCENTE -->
+        <mxCell id="noRegistradoDoc" value="Enviar MENSAJE_NO_REGISTRADO&#xa;+ Email al área académica&#xa;+ Limpiar sesión" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1190" y="935" width="180" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- GUARDAR EN SESION -->
+        <mxCell id="guardarSesion" value="Guardar datos en sesión:&#xa;nombre, email, matrículas, secciones activas" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="577" y="1030" width="300" height="55" as="geometry" />
+        </mxCell>
+
+        <!-- SALUDAR -->
+        <mxCell id="saludar" value="Enviar: 'Hola {nombre}! ¿Cuál es tu consulta hoy?'&#xa;(MENSAJE_IDENTIFICADO de CONFIGURACION)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="577" y="1120" width="300" height="55" as="geometry" />
+        </mxCell>
+
+        <!-- ESPERA CONSULTA -->
+        <mxCell id="esperaConsulta" value="Usuario envía su consulta" style="ellipse;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="617" y="1215" width="220" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- CONSTRUIR CONTEXTO -->
+        <mxCell id="contexto" value="Construir CONTEXTO para Gemini:&#xa;• Nombre del alumno/docente&#xa;• Cursos/secciones activas&#xa;• Estado de pago&#xa;• Historial últimos 5 mensajes" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;align=left;" vertex="1" parent="1">
+          <mxGeometry x="200" y="1310" width="280" height="90" as="geometry" />
+        </mxCell>
+
+        <!-- CONSTRUIR CATALOGO -->
+        <mxCell id="catalogo" value="Construir CATÁLOGO para Gemini:&#xa;• Filtrar por AUDIENCIA (ALUMNO/DOCENTE)&#xa;• Solo columnas: ID, CATEGORIA,&#xa;  INTENCION, FRASES_EJEMPLO, PRIORIDAD" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;align=left;" vertex="1" parent="1">
+          <mxGeometry x="980" y="1310" width="280" height="90" as="geometry" />
+        </mxCell>
+
+        <!-- LLAMAR GEMINI -->
+        <mxCell id="gemini" value="🤖 Llamar a Gemini API (gemini-1.5-flash)&#xa;&#xa;Prompt: contexto + catálogo + mensaje + historial&#xa;Temperature: 0.1 (muy determinístico)&#xa;MaxTokens: 50 (solo necesita el ID)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="527" y="1450" width="400" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- GEMINI DEVUELVE -->
+        <mxCell id="geminiResponse" value="Gemini devuelve un ID&#xa;Ej: ACCESO_001, CLASES_005, DERIVAR_HUMANO" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="577" y="1570" width="300" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- VALIDAR ID -->
+        <mxCell id="validarId" value="¿El ID existe en el catálogo?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="577" y="1660" width="300" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- ID INVALIDO -->
+        <mxCell id="idInvalido" value="ID inválido → forzar DERIVAR_HUMANO" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="940" y="1677" width="220" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- ES DERIVAR? -->
+        <mxCell id="esDerivar" value="¿Es DERIVAR_HUMANO?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="577" y="1770" width="300" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- DERIVAR HUMANO -->
+        <mxCell id="derivar" value="1. Enviar MENSAJE_DERIVAR al usuario&#xa;2. Enviar email a students@example.com con:&#xa;   • Número, Nombre, Mensaje original&#xa;3. Registrar en LOG_CONVERSACIONES" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;align=left;" vertex="1" parent="1">
+          <mxGeometry x="940" y="1775" width="280" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- OBTENER RESPUESTA -->
+        <mxCell id="obtenerResp" value="Buscar fila en hoja RESPUESTAS por ID&#xa;Reemplazar variables dinámicas:&#xa;{nombre_alumno} → CRM&#xa;{meet_url}, {horario}, {fecha_inicio} → CRM/Sección&#xa;{simulador_url} → CONFIGURACION" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;align=left;" vertex="1" parent="1">
+          <mxGeometry x="527" y="1890" width="400" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- TIPO ADJUNTO -->
+        <mxCell id="tipoAdjunto" value="¿Qué TIPO_ADJUNTO tiene la respuesta?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="577" y="2020" width="300" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- TIPO NINGUNO -->
+        <mxCell id="tipoNinguno" value="NINGUNO&#xa;Solo enviar texto" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="200" y="2150" width="140" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- TIPO BOTON -->
+        <mxCell id="tipoBoton" value="BOTON_URL&#xa;Texto + botón con enlace" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="370" y="2150" width="160" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- TIPO PDF -->
+        <mxCell id="tipoPdf" value="PDF/ARCHIVO&#xa;Texto + documento" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="560" y="2150" width="140" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- TIPO IMAGEN -->
+        <mxCell id="tipoImagen" value="IMAGEN&#xa;Texto + imagen" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="730" y="2150" width="140" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- TIPO VIDEO -->
+        <mxCell id="tipoVideo" value="VIDEO&#xa;Texto + video" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="900" y="2150" width="140" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- ENVIAR RESPUESTA -->
+        <mxCell id="enviarResp" value="Enviar respuesta al usuario via Meta WhatsApp API&#xa;'Hola {primerNombre}!' + texto + adjunto" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="527" y="2250" width="400" height="55" as="geometry" />
+        </mxCell>
+
+        <!-- LOG -->
+        <mxCell id="log" value="Registrar en LOG_CONVERSACIONES:&#xa;fecha, teléfono, mensaje, ID elegido, derivado, tiempo ms" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="527" y="2350" width="400" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- ACTUALIZAR HISTORIAL -->
+        <mxCell id="historial" value="Actualizar historial de sesión (últimos 5 mensajes)&#xa;Guardar sesión en PropertiesService" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="527" y="2440" width="400" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- FIN -->
+        <mxCell id="fin" value="Esperar siguiente mensaje del usuario" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="617" y="2530" width="220" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- NOTA MEJORA CONTINUA -->
+        <mxCell id="mejora" value="📊 MEJORA CONTINUA (sin código)&#xa;&#xa;1. Revisar LOG_CONVERSACIONES&#xa;2. Identificar DERIVAR_HUMANO innecesarios&#xa;3. Agregar filas al Sheet RESPUESTAS&#xa;4. Mejorar FRASES_EJEMPLO&#xa;5. El bot mejora automáticamente" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;align=left;" vertex="1" parent="1">
+          <mxGeometry x="1250" y="2100" width="260" height="130" as="geometry" />
+        </mxCell>
+
+        <!-- NOTA SESION -->
+        <mxCell id="notaSesion" value="💾 SESIÓN (PropertiesService)&#xa;• Expira a las 4 horas de inactividad&#xa;• Guarda: rol, datos CRM, historial&#xa;• Reset con: 'reset' o 'reiniciar'" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;align=left;" vertex="1" parent="1">
+          <mxGeometry x="1250" y="580" width="240" height="90" as="geometry" />
+        </mxCell>
+
+        <!-- NOTA SHEET RESPUESTAS -->
+        <mxCell id="notaSheet" value="📋 SHEET RESPUESTAS&#xa;• Filtrado por AUDIENCIA&#xa;• Categorías: ACCESO, CLASES,&#xa;  MATERIAL, CERTIFICACION,&#xa;  CURSO, TECNICO, DOCENTES&#xa;• ACTIVO = SI/NO sin borrar" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;align=left;" vertex="1" parent="1">
+          <mxGeometry x="1250" y="1450" width="240" height="110" as="geometry" />
+        </mxCell>
+
+        <!-- FLECHAS DE CONEXIÓN -->
+        <mxCell id="e1" edge="1" source="start" target="meta" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e2" edge="1" source="meta" target="dopost" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e3" edge="1" source="dopost" target="esTexto" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e4" value="No" edge="1" source="esTexto" target="noTexto" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e5" value="Sí" edge="1" source="esTexto" target="esReset" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e6" value="Sí" edge="1" source="esReset" target="limpiarSesion" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e7" value="No" edge="1" source="esReset" target="tieneSesion" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e8" value="No (primera vez)" edge="1" source="tieneSesion" target="bienvenida" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e9" edge="1" source="bienvenida" target="esperaRol" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e10" edge="1" source="esperaRol" target="rolDecision" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e11" value="Sí (tiene sesión)" edge="1" source="tieneSesion" target="rolDecision" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e12" value="ALUMNO" edge="1" source="rolDecision" target="buscarAlumno" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e13" value="DOCENTE" edge="1" source="rolDecision" target="buscarDocente" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e14" edge="1" source="buscarAlumno" target="encontradoAlumno" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e15" edge="1" source="buscarDocente" target="encontradoDocente" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e16" value="No" edge="1" source="encontradoAlumno" target="noRegistrado" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e17" value="No" edge="1" source="encontradoDocente" target="noRegistradoDoc" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e18" value="Sí" edge="1" source="encontradoAlumno" target="guardarSesion" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e19" value="Sí" edge="1" source="encontradoDocente" target="guardarSesion" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e20" edge="1" source="guardarSesion" target="saludar" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e21" edge="1" source="saludar" target="esperaConsulta" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e22" edge="1" source="esperaConsulta" target="contexto" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e23" edge="1" source="esperaConsulta" target="catalogo" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e24" edge="1" source="contexto" target="gemini" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e25" edge="1" source="catalogo" target="gemini" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e26" edge="1" source="gemini" target="geminiResponse" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e27" edge="1" source="geminiResponse" target="validarId" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e28" value="No" edge="1" source="validarId" target="idInvalido" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e29" value="Sí" edge="1" source="validarId" target="esDerivar" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e30" edge="1" source="idInvalido" target="esDerivar" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e31" value="Sí" edge="1" source="esDerivar" target="derivar" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e32" value="No" edge="1" source="esDerivar" target="obtenerResp" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e33" edge="1" source="obtenerResp" target="tipoAdjunto" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e34" value="NINGUNO" edge="1" source="tipoAdjunto" target="tipoNinguno" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e35" value="BOTON_URL" edge="1" source="tipoAdjunto" target="tipoBoton" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e36" value="PDF/ARCHIVO" edge="1" source="tipoAdjunto" target="tipoPdf" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e37" value="IMAGEN" edge="1" source="tipoAdjunto" target="tipoImagen" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e38" value="VIDEO" edge="1" source="tipoAdjunto" target="tipoVideo" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e39" edge="1" source="tipoNinguno" target="enviarResp" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e40" edge="1" source="tipoBoton" target="enviarResp" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e41" edge="1" source="tipoPdf" target="enviarResp" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e42" edge="1" source="tipoImagen" target="enviarResp" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e43" edge="1" source="tipoVideo" target="enviarResp" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e44" edge="1" source="enviarResp" target="log" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e45" edge="1" source="log" target="historial" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e46" edge="1" source="historial" target="fin" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

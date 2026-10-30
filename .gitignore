@@ -1,0 +1,17 @@
+# Config con credenciales reales (nunca subir)
+config.gs
+bot/config.gs
+**/config.gs
+
+# clasp / credenciales de despliegue
+.clasp.json
+.clasprc.json
+
+# Sistema
+.DS_Store
+
+# Node
+node_modules/
+
+# Logs
+*.log

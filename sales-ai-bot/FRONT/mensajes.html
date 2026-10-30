@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <?!= include('styles') ?>
+  <style>
+    .cols-container { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+    .col-card { background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+    .col-card h3 { font-size: 15px; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 2px solid #f0f2f5; }
+    .msg-item { border: 1px solid #e0e0e0; border-radius: 8px; padding: 12px; margin-bottom: 10px; }
+    .msg-item-clave { font-size: 12px; font-weight: 600; color: #4a90d9; margin-bottom: 6px; }
+    .msg-item textarea { font-size: 12px; min-height: 60px; }
+    .msg-item-actions { display: flex; justify-content: flex-end; margin-top: 8px; }
+    @media (max-width: 1024px) { .cols-container { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <?!= include('nav') ?>
+
+  <div class="container">
+    <div class="card">
+      <h2>📝 Mensajes del Bot</h2>
+      <p style="color:#666;font-size:13px;margin-bottom:16px;">Edita los textos que el bot envía. Los cambios se aplican inmediatamente.</p>
+    </div>
+
+    <div class="cols-container" id="cols-container">
+      <div class="col-card">
+        <h3>🔘 Botones</h3>
+        <div id="col-botones"><p style="color:#999;font-size:13px;">Cargando...</p></div>
+      </div>
+      <div class="col-card">
+        <h3>💬 Mensajes principales</h3>
+        <div id="col-principales"><p style="color:#999;font-size:13px;">Cargando...</p></div>
+      </div>
+      <div class="col-card">
+        <h3>🔔 Seguimientos</h3>
+        <div id="col-seguimientos"><p style="color:#999;font-size:13px;">Cargando...</p></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('nav-user').textContent = localStorage.getItem('nombre') || '';
+
+    function cargarMensajes() {
+      google.script.run
+        .withSuccessHandler(function(msgs) {
+          var botones = [];
+          var principales = [];
+          var seguimientos = [];
+
+          msgs.forEach(function(m) {
+            var clave = m.clave.toUpperCase();
+            if (clave.includes('BTN')) {
+              botones.push(m);
+            } else if (clave.includes('SEG')) {
+              seguimientos.push(m);
+            } else {
+              principales.push(m);
+            }
+          });
+
+          renderColumna('col-botones', botones);
+          renderColumna('col-principales', principales);
+          renderColumna('col-seguimientos', seguimientos);
+        })
+        .getMensajes();
+    }
+
+    function renderColumna(containerId, msgs) {
+      var container = document.getElementById(containerId);
+      if (!msgs.length) {
+        container.innerHTML = '<p style="color:#999;font-size:12px;">Sin mensajes</p>';
+        return;
+      }
+      container.innerHTML = msgs.map(function(m, idx) {
+        var uniqueId = containerId + '_' + idx;
+        return '<div class="msg-item">' +
+          '<div class="msg-item-clave">' + m.clave + '</div>' +
+          '<textarea id="' + uniqueId + '">' + m.texto + '</textarea>' +
+          '<div class="msg-item-actions">' +
+            '<button class="btn btn-sm btn-success" onclick="guardar(' + m.fila + ', \'' + uniqueId + '\')">Guardar</button>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+    }
+
+    function guardar(fila, textareaId) {
+      var texto = document.getElementById(textareaId).value;
+      google.script.run
+        .withSuccessHandler(function(res) {
+          if (res.success) alert('✅ Guardado');
+        })
+        .updateMensaje(fila, texto);
+    }
+
+    cargarMensajes();
+  </script>
+</body>
+</html>

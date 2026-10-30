@@ -1,0 +1,366 @@
+<mxfile host="app.diagrams.net" agent="Kiro" pages="2">
+  <diagram id="panel-admin-arch" name="Arquitectura Panel Admin">
+    <mxGraphModel dx="1049" dy="576" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2400" pageHeight="1600" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="actor_admin" parent="1" style="shape=image;verticalLabelPosition=bottom;labelBackgroundColor=default;verticalAlign=top;aspect=fixed;imageAspect=0;image=https://img.icons8.com/color/96/administrator-male.png;fontSize=11;fontStyle=1;" value="Admin / Jefe" vertex="1">
+          <mxGeometry height="60" width="60" x="29.5" y="105" as="geometry" />
+        </mxCell>
+        <mxCell id="actor_admin_label" parent="1" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=9;fontColor=#666666;" value="Panel Web" vertex="1">
+          <mxGeometry height="20" width="70" x="25" y="185" as="geometry" />
+        </mxCell>
+        <mxCell id="actor_asesor" parent="1" style="shape=image;verticalLabelPosition=bottom;labelBackgroundColor=default;verticalAlign=top;aspect=fixed;imageAspect=0;image=https://img.icons8.com/color/96/headset.png;fontSize=11;fontStyle=1;" value="Asesor" vertex="1">
+          <mxGeometry height="60" width="60" x="29.5" y="290" as="geometry" />
+        </mxCell>
+        <mxCell id="actor_asesor_label" parent="1" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=9;fontColor=#666666;" value="Chat en vivo" vertex="1">
+          <mxGeometry height="20" width="75" x="22" y="365" as="geometry" />
+        </mxCell>
+        <mxCell id="actor_lead" parent="1" style="shape=image;verticalLabelPosition=bottom;labelBackgroundColor=default;verticalAlign=top;aspect=fixed;imageAspect=0;image=https://img.icons8.com/color/96/whatsapp--v1.png;fontSize=11;fontStyle=1;" value="Lead" vertex="1">
+          <mxGeometry height="60" width="60" x="30" y="690" as="geometry" />
+        </mxCell>
+        <mxCell id="actor_lead_label" parent="1" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=9;fontColor=#666666;" value="mensaje" vertex="1">
+          <mxGeometry height="20" width="60" x="30" y="765" as="geometry" />
+        </mxCell>
+        <mxCell id="actor_meta" parent="1" style="shape=image;verticalLabelPosition=bottom;labelBackgroundColor=default;verticalAlign=top;aspect=fixed;imageAspect=0;image=https://img.icons8.com/color/96/meta.png;fontSize=11;fontStyle=1;" value="META ADS" vertex="1">
+          <mxGeometry height="60" width="60" x="30" y="880" as="geometry" />
+        </mxCell>
+        <mxCell id="gcp_container" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#4285F4;strokeWidth=2;arcSize=3;dashed=1;" value="" vertex="1">
+          <mxGeometry height="600" width="1100" x="160" y="50" as="geometry" />
+        </mxCell>
+        <mxCell id="gcp_label" parent="1" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;fontStyle=1;fontColor=#4285F4;" value="☁️ Google Cloud Platform" vertex="1">
+          <mxGeometry height="30" width="210" x="170" y="55" as="geometry" />
+        </mxCell>
+        <mxCell id="gcp_sublabel" parent="1" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=10;fontColor=#666666;" value="Firebase Hosting · Firestore · Auth · Apps Script · Sheets" vertex="1">
+          <mxGeometry height="20" width="320" x="170" y="78" as="geometry" />
+        </mxCell>
+        <mxCell id="firebase_hosting_box" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF8E1;strokeColor=#F9A825;strokeWidth=1.5;arcSize=5;" value="" vertex="1">
+          <mxGeometry height="300" width="400" x="180" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="firebase_hosting_label" parent="1" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=12;fontStyle=1;fontColor=#F9A825;" value="🔥 Firebase Hosting" vertex="1">
+          <mxGeometry height="25" width="150" x="190" y="105" as="geometry" />
+        </mxCell>
+        <mxCell id="firebase_hosting_sub" parent="1" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=9;fontColor=#666666;" value="Front-end — Next.js (React)" vertex="1">
+          <mxGeometry height="20" width="180" x="190" y="125" as="geometry" />
+        </mxCell>
+        <mxCell id="mod_msgs" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#F9A825;fontSize=10;" value="📝 Editar Mensajes&#xa;del Bot" vertex="1">
+          <mxGeometry height="45" width="160" x="200" y="160" as="geometry" />
+        </mxCell>
+        <mxCell id="mod_prompt" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#F9A825;fontSize=10;" value="🧠 Editar Prompt&#xa;(versionado + rollout gradual)" vertex="1">
+          <mxGeometry height="45" width="160" x="200" y="220" as="geometry" />
+        </mxCell>
+        <mxCell id="mod_chat" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#F9A825;fontSize=10;" value="💬 Chat en vivo&#xa;(responder leads en tiempo real)" vertex="1">
+          <mxGeometry height="45" width="160" x="200" y="280" as="geometry" />
+        </mxCell>
+        <mxCell id="mod_leads" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#F9A825;fontSize=10;" value="📊 Dashboard Leads&#xa;(estado, métricas)" vertex="1">
+          <mxGeometry height="45" width="160" x="200" y="340" as="geometry" />
+        </mxCell>
+        <mxCell id="mod_auth" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#F9A825;fontSize=10;" value="🔐 Firebase Auth&#xa;login email + roles" vertex="1">
+          <mxGeometry height="45" width="160" x="400" y="160" as="geometry" />
+        </mxCell>
+        <mxCell id="mod_firestore_sdk" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#F9A825;fontSize=10;" value="🔥 Firestore SDK&#xa;onSnapshot() — escucha realtime" vertex="1">
+          <mxGeometry height="45" width="160" x="400" y="280" as="geometry" />
+        </mxCell>
+        <mxCell id="firestore_box" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF3E0;strokeColor=#FF8F00;strokeWidth=1.5;arcSize=5;" value="" vertex="1">
+          <mxGeometry height="200" width="400" x="180" y="430" as="geometry" />
+        </mxCell>
+        <mxCell id="firestore_label" parent="1" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=12;fontStyle=1;fontColor=#FF8F00;" value="🔥 Cloud Firestore (GCP)" vertex="1">
+          <mxGeometry height="25" width="190" x="190" y="435" as="geometry" />
+        </mxCell>
+        <mxCell id="firestore_sub" parent="1" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=9;fontColor=#666666;" value="Base de datos en tiempo real" vertex="1">
+          <mxGeometry height="20" width="170" x="190" y="455" as="geometry" />
+        </mxCell>
+        <mxCell id="fs_conversaciones" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#FF8F00;fontSize=10;align=left;" value="📨 conversations/&#xa;{leadId}/messages" vertex="1">
+          <mxGeometry height="45" width="170" x="200" y="485" as="geometry" />
+        </mxCell>
+        <mxCell id="fs_prompts" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#FF8F00;fontSize=10;align=left;" value="🧠 prompts/&#xa;{version} + rollout_pct" vertex="1">
+          <mxGeometry height="45" width="170" x="200" y="545" as="geometry" />
+        </mxCell>
+        <mxCell id="fs_sessions" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#FF8F00;fontSize=10;align=left;" value="👤 sessions/&#xa;auth + roles" vertex="1">
+          <mxGeometry height="45" width="160" x="390" y="580" as="geometry" />
+        </mxCell>
+        <mxCell id="appscript_box" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFEBEE;strokeColor=#D32F2F;strokeWidth=1.5;arcSize=5;" value="" vertex="1">
+          <mxGeometry height="300" width="580" x="650" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="appscript_label" parent="1" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=12;fontStyle=1;fontColor=#D32F2F;" value="⚙️ Google Apps Script (Backend)" vertex="1">
+          <mxGeometry height="25" width="250" x="660" y="105" as="geometry" />
+        </mxCell>
+        <mxCell id="appscript_sub" parent="1" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=9;fontColor=#666666;" value="Web App desplegada — doPost (webhook) + doGet (API panel)" vertex="1">
+          <mxGeometry height="20" width="320" x="660" y="125" as="geometry" />
+        </mxCell>
+        <mxCell id="be_dopost" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#D32F2F;fontSize=10;" value="doPost()&#xa;Webhook Meta" vertex="1">
+          <mxGeometry height="45" width="130" x="670" y="155" as="geometry" />
+        </mxCell>
+        <mxCell id="be_doget" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#D32F2F;fontSize=10;" value="doGet()&#xa;API para Panel" vertex="1">
+          <mxGeometry height="45" width="130" x="670" y="215" as="geometry" />
+        </mxCell>
+        <mxCell id="be_bot" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#D32F2F;fontSize=10;" value="Bot.gs&#xa;Flujo determinístico&#xa;+ routing IA" vertex="1">
+          <mxGeometry height="50" width="140" x="830" y="155" as="geometry" />
+        </mxCell>
+        <mxCell id="be_motoria" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#D32F2F;fontSize=10;" value="MotorIA.gs&#xa;System prompt&#xa;Tool calling&#xa;Validación" vertex="1">
+          <mxGeometry height="60" width="140" x="830" y="220" as="geometry" />
+        </mxCell>
+        <mxCell id="be_panel_api" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#D32F2F;fontSize=10;" value="PanelAPI.gs&#xa;CRUD Mensajes&#xa;CRUD Prompt&#xa;Enviar msg manual" vertex="1">
+          <mxGeometry height="65" width="130" x="670" y="280" as="geometry" />
+        </mxCell>
+        <mxCell id="be_firestore_w" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#D32F2F;fontSize=10;" value="Firestore Write&#xa;Escribe msg nuevo&#xa;→ realtime al panel" vertex="1">
+          <mxGeometry height="55" width="140" x="830" y="295" as="geometry" />
+        </mxCell>
+        <mxCell id="be_prompt_mgr" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#D32F2F;fontSize=10;" value="PromptManager.gs&#xa;Versionado&#xa;Rollout gradual %" vertex="1">
+          <mxGeometry height="55" width="140" x="1000" y="155" as="geometry" />
+        </mxCell>
+        <mxCell id="be_seguimientos" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#D32F2F;fontSize=10;" value="Seguimientos.gs&#xa;Trigger cada 30min&#xa;Remarketing auto" vertex="1">
+          <mxGeometry height="55" width="140" x="1000" y="225" as="geometry" />
+        </mxCell>
+        <mxCell id="be_metricas" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#D32F2F;fontSize=10;" value="Metricas.gs&#xa;KPIs por estado" vertex="1">
+          <mxGeometry height="45" width="140" x="1000" y="295" as="geometry" />
+        </mxCell>
+        <mxCell id="sheets_box" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F5E9;strokeColor=#388E3C;strokeWidth=1.5;arcSize=5;" value="" vertex="1">
+          <mxGeometry height="200" width="580" x="650" y="430" as="geometry" />
+        </mxCell>
+        <mxCell id="sheets_label" parent="1" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=12;fontStyle=1;fontColor=#388E3C;" value="📊 Google Sheets (BD principal)" vertex="1">
+          <mxGeometry height="25" width="240" x="660" y="435" as="geometry" />
+        </mxCell>
+        <mxCell id="sheets_sub" parent="1" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=9;fontColor=#666666;" value="Persistencia — todas las hojas del bot" vertex="1">
+          <mxGeometry height="20" width="230" x="660" y="455" as="geometry" />
+        </mxCell>
+        <mxCell id="sh_leads" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#388E3C;fontSize=10;" value="DATA_LEADS" vertex="1">
+          <mxGeometry height="30" width="110" x="670" y="485" as="geometry" />
+        </mxCell>
+        <mxCell id="sh_cursos" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#388E3C;fontSize=10;" value="Cursos" vertex="1">
+          <mxGeometry height="30" width="90" x="790" y="485" as="geometry" />
+        </mxCell>
+        <mxCell id="sh_asesor" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#388E3C;fontSize=10;" value="Asesor" vertex="1">
+          <mxGeometry height="30" width="90" x="890" y="485" as="geometry" />
+        </mxCell>
+        <mxCell id="sh_mensajes" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#388E3C;fontSize=10;" value="Mensajes" vertex="1">
+          <mxGeometry height="30" width="90" x="990" y="485" as="geometry" />
+        </mxCell>
+        <mxCell id="sh_modalidades" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#388E3C;fontSize=10;" value="Modalidades" vertex="1">
+          <mxGeometry height="30" width="100" x="1090" y="485" as="geometry" />
+        </mxCell>
+        <mxCell id="sh_faq" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#388E3C;fontSize=10;" value="FAQ" vertex="1">
+          <mxGeometry height="30" width="70" x="670" y="530" as="geometry" />
+        </mxCell>
+        <mxCell id="sh_logs" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#388E3C;fontSize=10;" value="Logs" vertex="1">
+          <mxGeometry height="30" width="70" x="750" y="530" as="geometry" />
+        </mxCell>
+        <mxCell id="sh_metricas" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#388E3C;fontSize=10;" value="Métricas" vertex="1">
+          <mxGeometry height="30" width="80" x="830" y="530" as="geometry" />
+        </mxCell>
+        <mxCell id="sh_media" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#388E3C;fontSize=10;" value="MEDIA META ID" vertex="1">
+          <mxGeometry height="30" width="110" x="920" y="530" as="geometry" />
+        </mxCell>
+        <mxCell id="deepseek_box" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F3E5F5;strokeColor=#7B1FA2;strokeWidth=1.5;arcSize=8;" value="" vertex="1">
+          <mxGeometry height="120" width="200" x="1350" y="180" as="geometry" />
+        </mxCell>
+        <mxCell id="deepseek_label" parent="1" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=12;fontStyle=1;fontColor=#7B1FA2;" value="🧠 DeepSeek API" vertex="1">
+          <mxGeometry height="25" width="130" x="1360" y="185" as="geometry" />
+        </mxCell>
+        <mxCell id="deepseek_model" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#7B1FA2;fontSize=9;align=left;" value="Modelo: deepseek-chat&#xa;(V4 Flash)&#xa;tool_choice: required&#xa;Función: responder_lead" vertex="1">
+          <mxGeometry height="70" width="170" x="1365" y="215" as="geometry" />
+        </mxCell>
+        <mxCell id="meta_box" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8EAF6;strokeColor=#283593;strokeWidth=1.5;arcSize=8;" value="" vertex="1">
+          <mxGeometry height="120" width="350" x="180" y="700" as="geometry" />
+        </mxCell>
+        <mxCell id="meta_label" parent="1" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=12;fontStyle=1;fontColor=#283593;" value="📱 Meta — WhatsApp Business API" vertex="1">
+          <mxGeometry height="25" width="260" x="190" y="705" as="geometry" />
+        </mxCell>
+        <mxCell id="meta_webhook" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#283593;fontSize=9;align=left;" value="Webhook&#xa;Envía POST a Apps Script&#xa;cuando llega un mensaje" vertex="1">
+          <mxGeometry height="55" width="150" x="200" y="740" as="geometry" />
+        </mxCell>
+        <mxCell id="meta_send" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#283593;fontSize=9;align=left;" value="Graph API v19.0&#xa;Enviar mensajes&#xa;(texto, botones, media)" vertex="1">
+          <mxGeometry height="55" width="150" x="365" y="740" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow1" edge="1" parent="1" source="actor_admin" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#F9A825;strokeWidth=2;" target="mod_msgs">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow1_l" connectable="0" parent="arrow1" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=8;fontColor=#666666;" value="Accede al panel&#xa;(edita config)" vertex="1">
+          <mxGeometry relative="1" x="-0.1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow2" edge="1" parent="1" source="actor_asesor" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#F9A825;strokeWidth=2;" target="mod_chat">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow2_l" connectable="0" parent="arrow2" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=8;fontColor=#666666;" value="Responde leads&#xa;en tiempo real" vertex="1">
+          <mxGeometry relative="1" x="-0.1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow3" edge="1" parent="1" source="mod_msgs" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#D32F2F;strokeWidth=1.5;" target="be_doget">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="280" y="150" />
+              <mxPoint x="735" y="150" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow3_l" connectable="0" parent="arrow3" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=8;fontColor=#666666;" value="HTTP GET/POST&#xa;(CRUD config)" vertex="1">
+          <mxGeometry relative="1" x="-0.2" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow4" edge="1" parent="1" source="mod_firestore_sdk" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#FF8F00;strokeWidth=2;dashed=0;" target="fs_conversaciones">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="480.07" y="410" />
+              <mxPoint x="285" y="410" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow4_l" connectable="0" parent="arrow4" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=8;fontColor=#FF8F00;fontStyle=1;" value="🔴 Escucha&#xa;tiempo real" vertex="1">
+          <mxGeometry relative="1" x="-0.2" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow5" edge="1" parent="1" source="actor_lead" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#283593;strokeWidth=2;" target="meta_webhook">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="120" y="720" />
+              <mxPoint x="120" y="770" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow5_l" connectable="0" parent="arrow5" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=8;fontColor=#666666;" value="Escribe mensaje" vertex="1">
+          <mxGeometry relative="1" x="-0.2" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow6" edge="1" parent="1" source="meta_webhook" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#283593;strokeWidth=2;" target="be_dopost">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="275" y="840" />
+              <mxPoint x="1300" y="840" />
+              <mxPoint x="1300" y="150" />
+              <mxPoint x="735" y="150" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow6_l" connectable="0" parent="arrow6" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=8;fontColor=#666666;" value="Webhook POST" vertex="1">
+          <mxGeometry relative="1" x="-0.2" as="geometry">
+            <mxPoint x="-832" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow7" edge="1" parent="1" source="be_dopost" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#D32F2F;" target="be_bot">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow8" edge="1" parent="1" source="be_bot" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#D32F2F;" target="be_motoria">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow8_l" connectable="0" parent="arrow8" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=8;fontColor=#666666;" value="texto libre" vertex="1">
+          <mxGeometry relative="1" x="-0.2" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow9" edge="1" parent="1" source="be_motoria" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#7B1FA2;strokeWidth=2;" target="deepseek_model">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="900.07" y="290" />
+              <mxPoint x="1450.07" y="290" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow9_l" connectable="0" parent="arrow9" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=8;fontColor=#7B1FA2;" value="API call&#xa;(chat/completions)" vertex="1">
+          <mxGeometry relative="1" x="-0.2" as="geometry">
+            <mxPoint x="183" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow10" edge="1" parent="1" source="be_motoria" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#D32F2F;dashed=1;" target="be_prompt_mgr">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="arrow10_l" connectable="0" parent="arrow10" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=8;fontColor=#666666;" value="obtiene prompt&#xa;según versión activa" vertex="1">
+          <mxGeometry relative="1" x="-0.2" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow11" edge="1" parent="1" source="be_bot" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#388E3C;strokeWidth=1.5;" target="sh_leads">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="630" y="180" />
+              <mxPoint x="630" y="500" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow11_l" connectable="0" parent="arrow11" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=8;fontColor=#666666;" value="lee/escribe&#xa;leads + estado" vertex="1">
+          <mxGeometry relative="1" x="-0.2" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow12" edge="1" parent="1" source="be_bot" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#283593;strokeWidth=1.5;" target="meta_send">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="610" y="180" />
+              <mxPoint x="610" y="767.5" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow12_l" connectable="0" parent="arrow12" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=8;fontColor=#666666;" value="envía respuesta&#xa;al lead (WA API)" vertex="1">
+          <mxGeometry relative="1" x="-0.2" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow13" edge="1" parent="1" source="meta_send" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#388E3C;strokeWidth=1.5;" target="actor_lead">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="430" y="680" />
+              <mxPoint x="60" y="680" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow13_l" connectable="0" parent="arrow13" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=8;fontColor=#666666;" value="entrega mensaje&#xa;al lead" vertex="1">
+          <mxGeometry relative="1" x="-0.2" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow14" edge="1" parent="1" source="be_firestore_w" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#FF8F00;strokeWidth=2;" target="fs_conversaciones">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="900.07" y="510" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow14_l" connectable="0" parent="arrow14" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=8;fontColor=#FF8F00;" value="escribe msg nuevo&#xa;(dispara realtime)" vertex="1">
+          <mxGeometry relative="1" x="-0.2" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow15" edge="1" parent="1" source="be_panel_api" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#388E3C;strokeWidth=1.5;" target="sh_mensajes">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="735" y="420" />
+              <mxPoint x="1035" y="420" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow15_l" connectable="0" parent="arrow15" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=8;fontColor=#666666;" value="CRUD mensajes,&#xa;cursos, config" vertex="1">
+          <mxGeometry relative="1" x="-0.2" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow16" edge="1" parent="1" source="be_prompt_mgr" style="edgeStyle=orthogonalEdgeStyle;rounded=1;strokeColor=#FF8F00;dashed=1;" target="fs_prompts">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1070" y="220" />
+              <mxPoint x="570.13" y="220" />
+              <mxPoint x="570.13" y="567.5" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow16_l" connectable="0" parent="arrow16" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=8;fontColor=#666666;" value="lee prompt activo&#xa;+ % rollout" vertex="1">
+          <mxGeometry relative="1" x="-0.2" as="geometry">
+            <mxPoint x="-217" y="340" as="offset" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="JdUN3gSzlX1PKYvddnWn" name="Página-2">
+    <mxGraphModel grid="1" page="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
