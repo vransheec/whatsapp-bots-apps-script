@@ -29,6 +29,16 @@ derivación a un humano por correo. Las sesiones se mantienen con
 
 ## Conceptos comunes
 
+```mermaid
+flowchart LR
+    WA([WhatsApp del usuario]) <--> META[Meta WhatsApp API]
+    META -- doPost webhook --> BOT[Apps Script<br/>flujo conversacional / menú]
+    BOT --> SH[(Google Sheets<br/>leads / CRM)]
+    BOT --> CAL[Calendar<br/>agendamiento]
+    BOT -. casos complejos .-> HUM[[Asesor humano]]
+    PANEL[Panel admin<br/>FRONT] --> SH
+```
+
 - **Despliegue con `clasp`.** Cada bot (y cada subproyecto) es un despliegue de
   Apps Script independiente con su propio `scriptId`.
 - **Credenciales fuera del código.** Se usan `Script Properties` y un `config.gs`
